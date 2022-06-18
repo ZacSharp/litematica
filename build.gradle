@@ -119,7 +119,7 @@ dependencies {
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:' + config.minecraft_version + '-' + config.forge_version
-    implementation fileTree(dir: "../malilib/build/libs", include: "**.jar")
+    implementation fileTree(dir: "../malilib/build/libs", include: "**-deobf.jar")
     //implementation fileTree(dir: "../malilib/build/libs", include: "malilib-forge-${config.minecraft_version_out}-${config.malilib_version}**.jar")
     //implementation 'fi.dy.masa.malilib:malilib-forge-' + config.minecraft_version_out + ':' + config.malilib_version + ':deobf'
 
@@ -161,6 +161,8 @@ jar {
 
 mixin {
     add sourceSets.main, 'mixins.' + config.mod_id + '.refmap.json'
+    config 'mixins.' + config.mod_id + '.json'
+    config 'mixins.malilib.json'
 }
 
 // Example configuration to allow publishing using the maven-publish task
