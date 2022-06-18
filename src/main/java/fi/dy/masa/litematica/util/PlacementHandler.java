@@ -49,22 +49,22 @@ public class PlacementHandler
             // STAIR_SHAPE - Stairs (needed to get the correct state, otherwise the player facing would be a factor)
             // WALL_MOUNT_LOCATION - Button, Grindstone, Lever
             BlockStateProperties.AXIS,
-            BlockStateProperties.BLOCK_HALF,
+            BlockStateProperties.HALF,
             BlockStateProperties.CHEST_TYPE,
             BlockStateProperties.COMPARATOR_MODE,
             BlockStateProperties.DOOR_HINGE,
             BlockStateProperties.SLAB_TYPE,
-            BlockStateProperties.STAIR_SHAPE,
-            BlockStateProperties.WALL_MOUNT_LOCATION,
+            BlockStateProperties.STAIRS_SHAPE,
+            BlockStateProperties.FACE,
             // IntProperty:
             // BITES - Cake
             // DELAY - Repeater
             // NOTE - NoteBlock
             // ROTATION - Banner, Sign, Skull
-            BlockStateProperties.BITES,
-            BlockStateProperties.DELAY,
-            BlockStateProperties.NOTE,
-            BlockStateProperties.ROTATION
+            BlockStateProperties.BITES_0_6,
+            BlockStateProperties.DELAY_1_4,
+            BlockStateProperties.NOTE_0_24,
+            BlockStateProperties.ROTATION_0_15
     );
 
     @Nullable
@@ -111,7 +111,7 @@ public class PlacementHandler
             {
                 Integer delay = (protocolValue / 16) + 1;
 
-                if (RepeaterBlock.DELAY.getValues().contains(delay))
+                if (RepeaterBlock.DELAY.getAllowedValues().contains(delay))
                 {
                     state = state.with(RepeaterBlock.DELAY, delay);
                 }
@@ -163,7 +163,7 @@ public class PlacementHandler
         // Consume the lowest unused bit
         protocolValue >>>= 1;
 
-        List<Property<?>> propList = new ArrayList<>(state.getBlock().getStateManager().getProperties());
+        List<Property<?>> propList = new ArrayList<>(state.getBlock().getStateContainer().getProperties());
         propList.sort(Comparator.comparing(Property::getName));
 
         try
@@ -175,7 +175,7 @@ public class PlacementHandler
                 {
                     @SuppressWarnings("unchecked")
                     Property<T> prop = (Property<T>) p;
-                    List<T> list = new ArrayList<>(prop.getValues());
+                    List<T> list = new ArrayList<>(prop.getAllowedValues());
                     list.sort(Comparable::compareTo);
 
                     int requiredBits = MathHelper.log2(MathHelper.smallestEncompassingPowerOfTwo(list.size()));
@@ -220,9 +220,9 @@ public class PlacementHandler
         }
         else if (decodedFacingIndex >= 0 && decodedFacingIndex <= 5)
         {
-            facing = Direction.byId(decodedFacingIndex);
+            facing = Direction.byIndex(decodedFacingIndex);
 
-            if (property.getValues().contains(facing) == false)
+            if (property.getAllowedValues().contains(facing) == false)
             {
                 facing = context.getEntity().getHorizontalFacing().getOpposite();
             }
@@ -230,14 +230,14 @@ public class PlacementHandler
 
         //System.out.printf("plop facing: %s -> %s (raw: %d, dec: %d)\n", facingOrig, facing, rawFacingIndex, decodedFacingIndex);
 
-        if (facing != facingOrig && property.getValues().contains(facing))
+        if (facing != facingOrig && property.getAllowedValues().contains(facing))
         {
             if (state.getBlock() instanceof BedBlock)
             {
                 BlockPos headPos = context.pos.offset(facing);
                 BlockItemUseContext ctx = context.getItemPlacementContext();
 
-                if (context.getWorld().getBlockState(headPos).canReplace(ctx) == false)
+                if (context.getWorld().getBlockState(headPos).isReplaceable(ctx) == false)
                 {
                     return null;
                 }
@@ -280,8 +280,8 @@ public class PlacementHandler
 
         public static UseContext from(BlockItemUseContext ctx, Hand hand)
         {
-            Vector3d pos = ctx.getHitPos();
-            return new UseContext(ctx.getWorld(), ctx.getBlockPos(), ctx.getSide(), new Vector3d(pos.x, pos.y, pos.z),
+            Vector3d pos = ctx.getHitVec();
+            return new UseContext(ctx.getWorld(), ctx.getPos(), ctx.getFace(), new Vector3d(pos.x, pos.y, pos.z),
                                   ctx.getPlayer(), hand, ctx);
         }
 

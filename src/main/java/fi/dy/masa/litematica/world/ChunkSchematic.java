@@ -26,9 +26,9 @@ public class ChunkSchematic extends Chunk
 
     public ChunkSchematic(World worldIn, ChunkPos pos)
     {
-        super(worldIn, pos, new BiomeContainer(worldIn.getRegistryManager().get(Registry.BIOME_KEY), Util.make(new Biome[BiomeContainer.DEFAULT_LENGTH], (biomes) -> Arrays.fill(biomes, BiomeRegistry.PLAINS))));
+        super(worldIn, pos, new BiomeContainer(worldIn.func_241828_r().getRegistry(Registry.BIOME_KEY), Util.make(new Biome[BiomeContainer.BIOMES_SIZE], (biomes) -> Arrays.fill(biomes, BiomeRegistry.PLAINS))));
 
-        this.timeCreated = worldIn.getTime();
+        this.timeCreated = worldIn.getGameTime();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class ChunkSchematic extends Chunk
         int z = pos.getZ() & 0xF;
         int cy = y >> 4;
 
-        ChunkSection[] sections = this.getSectionArray();
+        ChunkSection[] sections = this.getSections();
 
         if (cy >= 0 && cy < sections.length)
         {
@@ -71,7 +71,7 @@ public class ChunkSchematic extends Chunk
 
             Block blockNew = state.getBlock();
             Block blockOld = stateOld.getBlock();
-            ChunkSection section = this.getSectionArray()[y >> 4];
+            ChunkSection section = this.getSections()[y >> 4];
 
             if (section == EMPTY_SECTION)
             {
@@ -81,7 +81,7 @@ public class ChunkSchematic extends Chunk
                 }
 
                 section = new ChunkSection(y & 0xF0);
-                this.getSectionArray()[y >> 4] = section;
+                this.getSections()[y >> 4] = section;
             }
 
             if (state.isAir() == false)
@@ -102,29 +102,29 @@ public class ChunkSchematic extends Chunk
             }
             else
             {
-                if (blockOld.hasBlockEntity())
+                if (blockOld.isTileEntityProvider())
                 {
-                    TileEntity te = this.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
+                    TileEntity te = this.getTileEntity(pos, Chunk.CreateEntityType.CHECK);
 
                     if (te != null)
                     {
-                        te.resetBlock();
+                        te.updateContainingBlockInfo();
                     }
                 }
 
-                if (blockNew.hasBlockEntity() && blockNew instanceof ITileEntityProvider)
+                if (blockNew.isTileEntityProvider() && blockNew instanceof ITileEntityProvider)
                 {
-                    TileEntity te = this.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
+                    TileEntity te = this.getTileEntity(pos, Chunk.CreateEntityType.CHECK);
 
                     if (te == null)
                     {
-                        te = ((ITileEntityProvider) blockNew).createBlockEntity(this.getWorld());
+                        te = ((ITileEntityProvider) blockNew).createNewTileEntity(this.getWorld());
 //                        this.getWorld().setTileEntity(pos, te);
                     }
 
                     if (te != null)
                     {
-                        te.resetBlock();
+                        te.updateContainingBlockInfo();
                     }
                 }
 

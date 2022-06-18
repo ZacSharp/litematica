@@ -267,7 +267,7 @@ public class GuiSubRegionConfiguration extends GuiBase
                 }
 
                 case MOVE_TO_PLAYER:
-                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, new BlockPos(this.parent.mc.player.getPos()), this.parent);
+                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, new BlockPos(this.parent.mc.player.getPositionVec()), this.parent);
                     break;
 
                 case NUDGE_COORD_X:

@@ -21,7 +21,7 @@ public class ToolUtils
 {
     public static void fillSelectionVolumes(Minecraft mc, BlockState state, @Nullable BlockState stateToReplace)
     {
-        if (mc.player != null && mc.player.abilities.creativeMode)
+        if (mc.player != null && mc.player.abilities.isCreativeMode)
         {
             final AreaSelection area = DataManager.getSelectionManager().getCurrentSelection();
 
@@ -81,7 +81,7 @@ public class ToolUtils
     public static void deleteSelectionVolumes(@Nullable final AreaSelection area, boolean removeEntities,
             @Nullable ICompletionListener listener, Minecraft mc)
     {
-        if (mc.player != null && mc.player.abilities.creativeMode)
+        if (mc.player != null && mc.player.abilities.isCreativeMode)
         {
             if (area == null)
             {

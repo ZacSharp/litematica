@@ -138,8 +138,8 @@ public class PositionUtils
 
                     if (bb != null)
                     {
-                        posMutable1.set(bb.minX, bb.minY, bb.minZ);
-                        posMutable2.set(bb.maxX, bb.maxY, bb.maxZ);
+                        posMutable1.setPos(bb.minX, bb.minY, bb.minZ);
+                        posMutable2.setPos(bb.maxX, bb.maxY, bb.maxZ);
 
                         if (arePositionsWithinWorld(world, posMutable1, posMutable2) == false)
                         {
@@ -258,11 +258,11 @@ public class PositionUtils
     {
         if (posToCheck != null)
         {
-            posMin.set( Math.min(posMin.getX(), posToCheck.getX()),
+            posMin.setPos( Math.min(posMin.getX(), posToCheck.getX()),
                         Math.min(posMin.getY(), posToCheck.getY()),
                         Math.min(posMin.getZ(), posToCheck.getZ()));
 
-            posMax.set( Math.max(posMax.getX(), posToCheck.getX()),
+            posMax.setPos( Math.max(posMax.getX(), posToCheck.getX()),
                         Math.max(posMax.getY(), posToCheck.getY()),
                         Math.max(posMax.getZ(), posToCheck.getZ()));
         }
@@ -964,7 +964,7 @@ public class PositionUtils
 
     public static class BlockPosComparator implements Comparator<BlockPos>
     {
-        private BlockPos posReference = BlockPos.ORIGIN;
+        private BlockPos posReference = BlockPos.ZERO;
         private boolean closestFirst;
 
         public void setClosestFirst(boolean closestFirst)
@@ -980,8 +980,8 @@ public class PositionUtils
         @Override
         public int compare(BlockPos pos1, BlockPos pos2)
         {
-            double dist1 = pos1.getSquaredDistance(this.posReference);
-            double dist2 = pos2.getSquaredDistance(this.posReference);
+            double dist1 = pos1.distanceSq(this.posReference);
+            double dist2 = pos2.distanceSq(this.posReference);
 
             if (dist1 == dist2)
             {
@@ -994,7 +994,7 @@ public class PositionUtils
 
     public static class ChunkPosComparator implements Comparator<ChunkPos>
     {
-        private BlockPos posReference = BlockPos.ORIGIN;
+        private BlockPos posReference = BlockPos.ZERO;
         private boolean closestFirst;
 
         public ChunkPosComparator setClosestFirst(boolean closestFirst)

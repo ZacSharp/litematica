@@ -109,18 +109,18 @@ public class WorldUtils
 
         WorldSchematic world = SchematicWorldHandler.createSchematicWorld();
 
-        loadChunksSchematicWorld(world, BlockPos.ORIGIN, schematic.getSize());
+        loadChunksSchematicWorld(world, BlockPos.ZERO, schematic.getSize());
         PlacementSettings placementSettings = new PlacementSettings();
         placementSettings.setIgnoreEntities(ignoreEntities);
-        schematic.placeSchematicDirectlyToChunks(world, BlockPos.ORIGIN, placementSettings);
+        schematic.placeSchematicDirectlyToChunks(world, BlockPos.ZERO, placementSettings);
 
         String subRegionName = FileUtils.getNameWithoutExtension(inputFileName) + " (Converted Schematic)";
         AreaSelection area = new AreaSelection();
         area.setName(subRegionName);
-        subRegionName = area.createNewSubRegionBox(BlockPos.ORIGIN, subRegionName);
+        subRegionName = area.createNewSubRegionBox(BlockPos.ZERO, subRegionName);
         area.setSelectedSubRegionBox(subRegionName);
         Box box = area.getSelectedSubRegionBox();
-        area.setSubRegionCornerPos(box, Corner.CORNER_1, BlockPos.ORIGIN);
+        area.setSubRegionCornerPos(box, Corner.CORNER_1, BlockPos.ZERO);
         area.setSubRegionCornerPos(box, Corner.CORNER_2, (new BlockPos(schematic.getSize())).add(-1, -1, -1));
         LitematicaSchematic.SchematicSaveInfo info = new LitematicaSchematic.SchematicSaveInfo(false, false);
 
@@ -222,12 +222,12 @@ public class WorldUtils
         WorldSchematic world = SchematicWorldHandler.createSchematicWorld();
 
         BlockPos size = new BlockPos(litematicaSchematic.getTotalSize());
-        loadChunksSchematicWorld(world, BlockPos.ORIGIN, size);
-        SchematicPlacement schematicPlacement = SchematicPlacement.createForSchematicConversion(litematicaSchematic, BlockPos.ORIGIN);
+        loadChunksSchematicWorld(world, BlockPos.ZERO, size);
+        SchematicPlacement schematicPlacement = SchematicPlacement.createForSchematicConversion(litematicaSchematic, BlockPos.ZERO);
         litematicaSchematic.placeToWorld(world, schematicPlacement, false); // TODO use a per-chunk version for a bit more speed
 
         Template template = new Template();
-        template.saveFromWorld(world, BlockPos.ORIGIN, size, ignoreEntities == false, Blocks.STRUCTURE_VOID);
+        template.takeBlocksFromWorld(world, BlockPos.ZERO, size, ignoreEntities == false, Blocks.STRUCTURE_VOID);
 
         return template;
     }
@@ -259,7 +259,7 @@ public class WorldUtils
                 return false;
             }
 
-            CompoundNBT tag = template.toTag(new CompoundNBT());
+            CompoundNBT tag = template.writeToNBT(new CompoundNBT());
             os = new FileOutputStream(file);
             CompressedStreamTools.writeCompressed(tag, os);
             os.close();
@@ -279,14 +279,14 @@ public class WorldUtils
         CompoundNBT nbt = CompressedStreamTools.readCompressed(stream);
         Template template = new Template();
         //template.read(fixer.process(FixTypes.STRUCTURE, nbt));
-        template.fromTag(nbt);
+        template.read(nbt);
 
         return template;
     }
 
     public static boolean isClientChunkLoaded(ClientWorld world, int chunkX, int chunkZ)
     {
-        return ((ClientChunkProvider) world.getChunkManager()).getChunk(chunkX, chunkZ, ChunkStatus.FULL, false) != null;
+        return ((ClientChunkProvider) world.getChunkProvider()).getChunk(chunkX, chunkZ, ChunkStatus.FULL, false) != null;
     }
 
     public static void loadChunksSchematicWorld(WorldSchematic world, BlockPos origin, Vector3i areaSize)
@@ -320,7 +320,7 @@ public class WorldUtils
 
             if (trace != null && trace.getType() == RayTraceResult.Type.BLOCK)
             {
-                BlockPos pos = trace.getBlockPos();
+                BlockPos pos = trace.getPos();
 
                 if (wrapper.getHitType() == HitType.SCHEMATIC_BLOCK)
                 {
@@ -430,7 +430,7 @@ public class WorldUtils
         {
             BlockRayTraceResult trace = traceWrapper.getBlockHitResult();
             RayTraceResult traceVanilla = RayTraceUtils.getRayTraceFromEntity(mc.world, mc.player, false, 6);
-            BlockPos pos = trace.getBlockPos();
+            BlockPos pos = trace.getPos();
             World world = SchematicWorldHandler.getSchematicWorld();
             BlockState stateSchematic = world.getBlockState(pos);
             ItemStack stack = MaterialCache.getInstance().getRequiredBuildItemForState(stateSchematic);
@@ -465,21 +465,21 @@ public class WorldUtils
                     return ActionResultType.FAIL;
                 }
 
-                Vector3d hitPos = trace.getPos();
-                Direction sideOrig = trace.getSide();
+                Vector3d hitPos = trace.getHitVec();
+                Direction sideOrig = trace.getFace();
 
                 // If there is a block in the world right behind the targeted schematic block, then use
                 // that block as the click position
                 if (traceVanilla != null && traceVanilla.getType() == RayTraceResult.Type.BLOCK)
                 {
                     BlockRayTraceResult hitResult = (BlockRayTraceResult) traceVanilla;
-                    BlockPos posVanilla = hitResult.getBlockPos();
-                    Direction sideVanilla = hitResult.getSide();
+                    BlockPos posVanilla = hitResult.getPos();
+                    Direction sideVanilla = hitResult.getFace();
                     BlockState stateVanilla = mc.world.getBlockState(posVanilla);
-                    Vector3d hit = traceVanilla.getPos();
+                    Vector3d hit = traceVanilla.getHitVec();
                     BlockItemUseContext ctx = new BlockItemUseContext(new ItemUseContext(mc.player, hand, hitResult));
 
-                    if (stateVanilla.canReplace(ctx) == false)
+                    if (stateVanilla.isReplaceable(ctx) == false)
                     {
                         posVanilla = posVanilla.offset(sideVanilla);
 
@@ -510,7 +510,7 @@ public class WorldUtils
 
                 //System.out.printf("pos: %s side: %s, hit: %s\n", pos, side, hitPos);
                 // pos, side, hitPos
-                mc.interactionManager.interactBlock(mc.player, mc.world, hand, hitResult);
+                mc.playerController.func_217292_a(mc.player, mc.world, hand, hitResult);
 
                 if (stateSchematic.getBlock() instanceof SlabBlock && stateSchematic.get(SlabBlock.TYPE) == SlabType.DOUBLE)
                 {
@@ -520,7 +520,7 @@ public class WorldUtils
                     {
                         side = applyPlacementFacing(stateSchematic, sideOrig, stateClient);
                         hitResult = new BlockRayTraceResult(hitPos, side, pos, false);
-                        mc.interactionManager.interactBlock(mc.player, mc.world, hand, hitResult);
+                        mc.playerController.func_217292_a(mc.player, mc.world, hand, hitResult);
                     }
                 }
             }
@@ -558,7 +558,7 @@ public class WorldUtils
         BlockRayTraceResult hitResult = (BlockRayTraceResult) trace;
         BlockItemUseContext ctx = new BlockItemUseContext(new ItemUseContext(player, Hand.MAIN_HAND, hitResult));
 
-        if (stateClient.canReplace(ctx) == false)
+        if (stateClient.isReplaceable(ctx) == false)
         {
             return true;
         }
@@ -581,7 +581,7 @@ public class WorldUtils
 
         if (facing != null)
         {
-            x = pos.getX() + relX + 2 + (facing.getId() * 2);
+            x = pos.getX() + relX + 2 + (facing.getIndex() * 2);
         }
 
         if (block instanceof RepeaterBlock)
@@ -620,7 +620,7 @@ public class WorldUtils
 
     public static <T extends Comparable<T>> Vector3d applyPlacementProtocolV3(BlockPos pos, BlockState state, Vector3d hitVecIn)
     {
-        Collection<Property<?>> props = state.getBlock().getStateManager().getProperties();
+        Collection<Property<?>> props = state.getBlock().getStateContainer().getProperties();
 
         if (props.isEmpty())
         {
@@ -638,7 +638,7 @@ public class WorldUtils
         if (property != null)
         {
             Direction direction = state.get(property);
-            protocolValue |= direction.getId() << shiftAmount;
+            protocolValue |= direction.getIndex() << shiftAmount;
             shiftAmount += 3;
             ++propCount;
         }
@@ -655,7 +655,7 @@ public class WorldUtils
                 {
                     @SuppressWarnings("unchecked")
                     Property<T> prop = (Property<T>) p;
-                    List<T> list = new ArrayList<>(prop.getValues());
+                    List<T> list = new ArrayList<>(prop.getAllowedValues());
                     list.sort(Comparable::compareTo);
 
                     int requiredBits = MathHelper.log2(MathHelper.smallestEncompassingPowerOfTwo(list.size()));
@@ -746,13 +746,13 @@ public class WorldUtils
      */
     private static boolean placementRestrictionInEffect(Minecraft mc)
     {
-        RayTraceResult trace = mc.crosshairTarget;
+        RayTraceResult trace = mc.objectMouseOver;
 
-        ItemStack stack = mc.player.getMainHandStack();
+        ItemStack stack = mc.player.getHeldItemMainhand();
 
         if (stack.isEmpty())
         {
-            stack = mc.player.getOffHandStack();
+            stack = mc.player.getHeldItemOffhand();
         }
 
         if (stack.isEmpty())
@@ -763,17 +763,17 @@ public class WorldUtils
         if (trace != null && trace.getType() == RayTraceResult.Type.BLOCK)
         {
             BlockRayTraceResult blockHitResult = (BlockRayTraceResult) trace;
-            BlockPos pos = blockHitResult.getBlockPos();
+            BlockPos pos = blockHitResult.getPos();
             BlockItemUseContext ctx = new BlockItemUseContext(new ItemUseContext(mc.player, Hand.MAIN_HAND, blockHitResult));
 
             // Get the possibly offset position, if the targeted block is not replaceable
-            pos = ctx.getBlockPos();
+            pos = ctx.getPos();
 
             BlockState stateClient = mc.world.getBlockState(pos);
 
             World worldSchematic = SchematicWorldHandler.getSchematicWorld();
             LayerRange range = DataManager.getRenderLayerRange();
-            boolean schematicHasAir = worldSchematic.isAir(pos);
+            boolean schematicHasAir = worldSchematic.isAirBlock(pos);
 
             // The targeted position is outside the current render range
             if (schematicHasAir == false && range.isPositionWithinRange(pos) == false)
@@ -788,11 +788,11 @@ public class WorldUtils
                 return true;
             }
 
-            blockHitResult = new BlockRayTraceResult(blockHitResult.getPos(), blockHitResult.getSide(), pos, false);
+            blockHitResult = new BlockRayTraceResult(blockHitResult.getHitVec(), blockHitResult.getFace(), pos, false);
             ctx = new BlockItemUseContext(new ItemUseContext(mc.player, Hand.MAIN_HAND, (BlockRayTraceResult) trace));
 
             // Placement position is already occupied
-            if (stateClient.canReplace(ctx) == false)
+            if (stateClient.isReplaceable(ctx) == false)
             {
                 return true;
             }
@@ -878,13 +878,13 @@ public class WorldUtils
                     Chunk chunk = world.getChunk(cx, z >> 4);
                     int xMin = Math.max(x1,  cx << 4      );
                     int xMax = Math.min(x2, (cx << 4) + 15);
-                    int yMax = Math.min(y2, chunk.getHighestNonEmptySectionYOffset() + 15);
+                    int yMax = Math.min(y2, chunk.getTopFilledSegment() + 15);
 
                     for (int x = xMin; x <= xMax; ++x)
                     {
                         for (int y = y1; y <= yMax; ++y)
                         {
-                            if (chunk.getBlockState(posMutable.set(x, y, z)).isAir() == false)
+                            if (chunk.getBlockState(posMutable.setPos(x, y, z)).isAir() == false)
                             {
                                 return false;
                             }
@@ -913,7 +913,7 @@ public class WorldUtils
                     {
                         Chunk chunk = world.getChunk(cx, cz);
 
-                        if (y > chunk.getHighestNonEmptySectionYOffset() + 15)
+                        if (y > chunk.getTopFilledSegment() + 15)
                         {
                             continue;
                         }
@@ -927,7 +927,7 @@ public class WorldUtils
                         {
                             for (int x = xMin; x <= xMax; ++x)
                             {
-                                if (chunk.getBlockState(posMutable.set(x, y, z)).isAir() == false)
+                                if (chunk.getBlockState(posMutable.setPos(x, y, z)).isAir() == false)
                                 {
                                     return false;
                                 }
@@ -954,13 +954,13 @@ public class WorldUtils
                     Chunk chunk = world.getChunk(x >> 4, cz);
                     int zMin = Math.max(z1,  cz << 4      );
                     int zMax = Math.min(z2, (cz << 4) + 15);
-                    int yMax = Math.min(y2, chunk.getHighestNonEmptySectionYOffset() + 15);
+                    int yMax = Math.min(y2, chunk.getTopFilledSegment() + 15);
 
                     for (int z = zMin; z <= zMax; ++z)
                     {
                         for (int y = y1; y <= yMax; ++y)
                         {
-                            if (chunk.getBlockState(posMutable.set(x, y, z)).isAir() == false)
+                            if (chunk.getBlockState(posMutable.setPos(x, y, z)).isAir() == false)
                             {
                                 return false;
                             }

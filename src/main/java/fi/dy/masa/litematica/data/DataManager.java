@@ -460,7 +460,7 @@ public class DataManager implements IDirectoryCache
             if (matcherNbt.matches())
             {
                 itemName = matcherNbt.group("name");
-                nbt = (new JsonToNBT(new StringReader(matcherNbt.group("nbt")))).parseCompoundTag();
+                nbt = (new JsonToNBT(new StringReader(matcherNbt.group("nbt")))).readStruct();
             }
             else if (matcherBase.matches())
             {
@@ -469,7 +469,7 @@ public class DataManager implements IDirectoryCache
 
             if (itemName != null)
             {
-                Item item = Registry.ITEM.get(new ResourceLocation(itemName));
+                Item item = Registry.ITEM.getOrDefault(new ResourceLocation(itemName));
 
                 if (item != null && item != Items.AIR)
                 {
@@ -485,6 +485,6 @@ public class DataManager implements IDirectoryCache
 
         // Fall back to a stick
         toolItem = new ItemStack(Items.STICK);
-        Configs.Generic.TOOL_ITEM.setValueFromString(Registry.ITEM.getId(Items.STICK).toString());
+        Configs.Generic.TOOL_ITEM.setValueFromString(Registry.ITEM.getKey(Items.STICK).toString());
     }
 }

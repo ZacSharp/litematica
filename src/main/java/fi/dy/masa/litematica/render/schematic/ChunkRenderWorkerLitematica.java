@@ -53,8 +53,8 @@ public class ChunkRenderWorkerLitematica implements Runnable
             }
             catch (Throwable throwable)
             {
-                CrashReport crashreport = CrashReport.create(throwable, "Batching chunks");
-                Minecraft.getInstance().setCrashReport(Minecraft.getInstance().addDetailsToCrashReport(crashreport));
+                CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Batching chunks");
+                Minecraft.getInstance().crashed(Minecraft.getInstance().addGraphicsAndWorldToCrashReport(crashreport));
                 return;
             }
         }
@@ -83,7 +83,7 @@ public class ChunkRenderWorkerLitematica implements Runnable
             task.getLock().unlock();
         }
 
-        Entity entity = Minecraft.getInstance().getCameraEntity();
+        Entity entity = Minecraft.getInstance().getRenderViewEntity();
 
         if (entity == null)
         {
@@ -134,7 +134,7 @@ public class ChunkRenderWorkerLitematica implements Runnable
             if (taskType == ChunkRenderTaskSchematic.Type.REBUILD_CHUNK)
             {
                 //if (GuiBase.isCtrlDown()) System.out.printf("pre uploadChunk()\n");
-                for (RenderType layer : RenderType.getBlockLayers())
+                for (RenderType layer : RenderType.getBlockRenderTypes())
                 {
                     if (chunkRenderData.isBlockLayerEmpty(layer) == false)
                     {
@@ -227,7 +227,7 @@ public class ChunkRenderWorkerLitematica implements Runnable
 
                     if ((throwable instanceof CancellationException) == false && (throwable instanceof InterruptedException) == false)
                     {
-                        Minecraft.getInstance().setCrashReport(CrashReport.create(throwable, "Rendering Litematica chunk"));
+                        Minecraft.getInstance().crashed(CrashReport.makeCrashReport(throwable, "Rendering Litematica chunk"));
                     }
                 }
             });

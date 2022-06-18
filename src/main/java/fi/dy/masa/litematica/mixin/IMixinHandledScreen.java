@@ -7,9 +7,9 @@ import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 @Mixin(ContainerScreen.class)
 public interface IMixinHandledScreen
 {
-    @Accessor("x")
+    @Accessor("guiLeft")
     int litematica_getX();
 
-    @Accessor("y")
+    @Accessor("guiTop")
     int litematica_getY();
 }

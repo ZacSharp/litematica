@@ -73,7 +73,7 @@ public class LitematicaSchematic
     public static final int MINECRAFT_DATA_VERSION_1_13_2 = 1631; // MC 1.13.2
 
     public static final int SCHEMATIC_VERSION = 5;
-    public static final int MINECRAFT_DATA_VERSION = SharedConstants.getGameVersion().getWorldVersion();
+    public static final int MINECRAFT_DATA_VERSION = SharedConstants.getVersion().getWorldVersion();
 
     private final Map<String, LitematicaBlockStateContainer> blockContainers = new HashMap<>();
     private final Map<String, Map<BlockPos, CompoundNBT>> tileEntities = new HashMap<>();
@@ -345,7 +345,7 @@ public class LitematicaSchematic
         BlockPos.Mutable posMutable = new BlockPos.Mutable();
         ReplaceBehavior replace = (ReplaceBehavior) Configs.Generic.PASTE_REPLACE_BEHAVIOR.getOptionListValue();
 
-        final Rotation rotationCombined = schematicPlacement.getRotation().rotate(placement.getRotation());
+        final Rotation rotationCombined = schematicPlacement.getRotation().add(placement.getRotation());
         final Mirror mirrorMain = schematicPlacement.getMirror();
         Mirror mirrorSub = placement.getMirror();
 
@@ -385,10 +385,10 @@ public class LitematicaSchematic
                         continue;
                     }
 
-                    posMutable.set(x, y, z);
+                    posMutable.setPos(x, y, z);
                     CompoundNBT teNBT = tileMap.get(posMutable);
 
-                    posMutable.set( posMinRel.getX() + x - regionPos.getX(),
+                    posMutable.setPos( posMinRel.getX() + x - regionPos.getX(),
                                     posMinRel.getY() + y - regionPos.getY(),
                                     posMinRel.getZ() + z - regionPos.getZ());
 
@@ -407,12 +407,12 @@ public class LitematicaSchematic
                     if (mirrorSub != Mirror.NONE)  { state = state.mirror(mirrorSub); }
                     if (rotationCombined != Rotation.NONE) { state = state.rotate(rotationCombined); }
 
-                    if (stateOld == state && state.getBlock().hasBlockEntity() == false)
+                    if (stateOld == state && state.getBlock().isTileEntityProvider() == false)
                     {
                         continue;
                     }
 
-                    TileEntity teOld = world.getBlockEntity(pos);
+                    TileEntity teOld = world.getTileEntity(pos);
 
                     if (teOld != null)
                     {
@@ -426,7 +426,7 @@ public class LitematicaSchematic
 
                     if (world.setBlockState(pos, state, 0x12) && teNBT != null)
                     {
-                        TileEntity te = world.getBlockEntity(pos);
+                        TileEntity te = world.getTileEntity(pos);
 
                         if (te != null)
                         {
@@ -442,16 +442,16 @@ public class LitematicaSchematic
 
                             try
                             {
-                                te.fromTag(state, teNBT);
+                                te.read(state, teNBT);
 
                                 if (ignoreInventories && te instanceof IInventory)
                                 {
                                     ((IInventory) te).clear();
                                 }
 
-                                if (mirrorMain != Mirror.NONE) { te.applyMirror(mirrorMain); }
-                                if (mirrorSub != Mirror.NONE)  { te.applyMirror(mirrorSub); }
-                                if (rotationCombined != Rotation.NONE) { te.applyRotation(rotationCombined); }
+                                if (mirrorMain != Mirror.NONE) { te.mirror(mirrorMain); }
+                                if (mirrorSub != Mirror.NONE)  { te.mirror(mirrorSub); }
+                                if (rotationCombined != Rotation.NONE) { te.rotate(rotationCombined); }
                             }
                             catch (Exception e)
                             {
@@ -471,11 +471,11 @@ public class LitematicaSchematic
                 {
                     for (int x = 0; x < sizeX; ++x)
                     {
-                        posMutable.set( posMinRel.getX() + x - regionPos.getX(),
+                        posMutable.setPos( posMinRel.getX() + x - regionPos.getX(),
                                         posMinRel.getY() + y - regionPos.getY(),
                                         posMinRel.getZ() + z - regionPos.getZ());
                         BlockPos pos = PositionUtils.getTransformedPlacementPosition(posMutable, schematicPlacement, placement).add(origin);
-                        world.updateNeighbors(pos, world.getBlockState(pos).getBlock());
+                        world.updateBlock(pos, world.getBlockState(pos).getBlock());
                     }
                 }
             }
@@ -491,7 +491,7 @@ public class LitematicaSchematic
                 {
                     BlockPos pos = entry.getKey().add(regionPosAbs);
                     NextTickListEntry<Block> tick = entry.getValue();
-                    serverWorld.getBlockTickScheduler().schedule(pos, tick.getObject(), (int) tick.time, tick.priority);
+                    serverWorld.getPendingBlockTicks().scheduleTick(pos, tick.getTarget(), (int) tick.field_235017_b_, tick.priority);
                 }
             }
 
@@ -505,7 +505,7 @@ public class LitematicaSchematic
                     if (state.getFluidState().isEmpty() == false)
                     {
                         NextTickListEntry<Fluid> tick = entry.getValue();
-                        serverWorld.getFluidTickScheduler().schedule(pos, tick.getObject(), (int) tick.time, tick.priority);
+                        serverWorld.getPendingFluidTicks().scheduleTick(pos, tick.getTarget(), (int) tick.field_235017_b_, tick.priority);
                     }
                 }
             }
@@ -521,7 +521,7 @@ public class LitematicaSchematic
         final int offY = regionPosRelTransformed.getY() + origin.getY();
         final int offZ = regionPosRelTransformed.getZ() + origin.getZ();
 
-        final Rotation rotationCombined = schematicPlacement.getRotation().rotate(placement.getRotation());
+        final Rotation rotationCombined = schematicPlacement.getRotation().add(placement.getRotation());
         final Mirror mirrorMain = schematicPlacement.getMirror();
         Mirror mirrorSub = placement.getMirror();
 
@@ -558,15 +558,15 @@ public class LitematicaSchematic
             net.minecraft.util.math.AxisAlignedBB bb = PositionUtils.createEnclosingAABB(box.getPos1(), box.getPos2());
             BlockPos regionPosAbs = box.getPos1();
             List<EntityInfo> list = new ArrayList<>();
-            List<Entity> entities = world.getOtherEntities((Entity) null, bb, null);
+            List<Entity> entities = world.getEntitiesInAABBexcluding((Entity) null, bb, null);
 
             for (Entity entity : entities)
             {
                 CompoundNBT tag = new CompoundNBT();
 
-                if (entity.saveToTag(tag))
+                if (entity.writeUnlessPassenger(tag))
                 {
-                    Vector3d posVec = new Vector3d(entity.getX() - regionPosAbs.getX(), entity.getY() - regionPosAbs.getY(), entity.getZ() - regionPosAbs.getZ());
+                    Vector3d posVec = new Vector3d(entity.getPosX() - regionPosAbs.getX(), entity.getPosY() - regionPosAbs.getY(), entity.getPosZ() - regionPosAbs.getZ());
                     NBTUtils.writeEntityPositionToTag(posVec, tag);
                     list.add(new EntityInfo(posVec, tag));
                 }
@@ -592,12 +592,12 @@ public class LitematicaSchematic
             }
 
             net.minecraft.util.math.AxisAlignedBB bb = PositionUtils.createAABBFrom(entry.getValue());
-            List<Entity> entities = world.getOtherEntities((Entity) null, bb, null);
+            List<Entity> entities = world.getEntitiesInAABBexcluding((Entity) null, bb, null);
             BlockPos regionPosAbs = box.getPos1();
 
             for (Entity entity : entities)
             {
-                UUID uuid = entity.getUuid();
+                UUID uuid = entity.getUniqueID();
                 /*
                 if (entity.posX >= bb.minX && entity.posX < bb.maxX &&
                     entity.posY >= bb.minY && entity.posY < bb.maxY &&
@@ -607,9 +607,9 @@ public class LitematicaSchematic
                 {
                     CompoundNBT tag = new CompoundNBT();
 
-                    if (entity.saveToTag(tag))
+                    if (entity.writeUnlessPassenger(tag))
                     {
-                        Vector3d posVec = new Vector3d(entity.getX() - regionPosAbs.getX(), entity.getY() - regionPosAbs.getY(), entity.getZ() - regionPosAbs.getZ());
+                        Vector3d posVec = new Vector3d(entity.getPosX() - regionPosAbs.getX(), entity.getPosY() - regionPosAbs.getY(), entity.getPosZ() - regionPosAbs.getZ());
                         NBTUtils.writeEntityPositionToTag(posVec, tag);
                         list.add(new EntityInfo(posVec, tag));
                         existingEntities.add(uuid);
@@ -649,7 +649,7 @@ public class LitematicaSchematic
                 {
                     for (int x = 0; x < sizeX; ++x)
                     {
-                        posMutable.set(x + startX, y + startY, z + startZ);
+                        posMutable.setPos(x + startX, y + startY, z + startZ);
 
                         if (visibleOnly && isExposed(world, posMutable) == false)
                         {
@@ -664,15 +664,15 @@ public class LitematicaSchematic
                             this.totalBlocksReadFromWorld++;
                         }
 
-                        if (state.getBlock().hasBlockEntity())
+                        if (state.getBlock().isTileEntityProvider())
                         {
-                            TileEntity te = world.getBlockEntity(posMutable);
+                            TileEntity te = world.getTileEntity(posMutable);
 
                             if (te != null)
                             {
                                 // TODO Add a TileEntity NBT cache from the Chunk packets, to get the original synced data (too)
                                 BlockPos pos = new BlockPos(x, y, z);
-                                CompoundNBT tag = te.toTag(new CompoundNBT());
+                                CompoundNBT tag = te.write(new CompoundNBT());
                                 NBTUtils.writeBlockPosToTag(pos, tag);
                                 tileEntityMap.put(pos, tag);
                             }
@@ -686,18 +686,18 @@ public class LitematicaSchematic
                 IntBoundingBox tickBox = IntBoundingBox.createProper(
                         startX,         startY,         startZ,
                         startX + sizeX, startY + sizeY, startZ + sizeZ);
-                List<NextTickListEntry<Block>> blockTicks = ((ServerWorld) world).getBlockTickScheduler().getScheduledTicks(tickBox.toVanillaBox(), false, false);
+                List<NextTickListEntry<Block>> blockTicks = ((ServerWorld) world).getPendingBlockTicks().getPending(tickBox.toVanillaBox(), false, false);
 
                 if (blockTicks != null)
                 {
-                    this.getPendingTicksFromWorld(blockTickMap, blockTicks, minCorner, startY, tickBox.maxY, world.getTime());
+                    this.getPendingTicksFromWorld(blockTickMap, blockTicks, minCorner, startY, tickBox.maxY, world.getGameTime());
                 }
 
-                List<NextTickListEntry<Fluid>> fluidTicks = ((ServerWorld) world).getFluidTickScheduler().getScheduledTicks(tickBox.toVanillaBox(), false, false);
+                List<NextTickListEntry<Fluid>> fluidTicks = ((ServerWorld) world).getPendingFluidTicks().getPending(tickBox.toVanillaBox(), false, false);
 
                 if (fluidTicks != null)
                 {
-                    this.getPendingTicksFromWorld(fluidTickMap, fluidTicks, minCorner, startY, tickBox.maxY, world.getTime());
+                    this.getPendingTicksFromWorld(fluidTickMap, fluidTicks, minCorner, startY, tickBox.maxY, world.getGameTime());
                 }
             }
 
@@ -718,14 +718,14 @@ public class LitematicaSchematic
             NextTickListEntry<T> entry = list.get(i);
 
             // The getPendingBlockUpdates() method doesn't check the y-coordinate... :-<
-            if (entry.pos.getY() >= startY && entry.pos.getY() < maxY)
+            if (entry.position.getY() >= startY && entry.position.getY() < maxY)
             {
                 // Store the delay, ie. relative time
                 BlockPos posRelative = new BlockPos(
-                        entry.pos.getX() - minCorner.getX(),
-                        entry.pos.getY() - minCorner.getY(),
-                        entry.pos.getZ() - minCorner.getZ());
-                NextTickListEntry<T> newEntry = new NextTickListEntry<>(posRelative, entry.getObject(), entry.time - currentTime, entry.priority);
+                        entry.position.getX() - minCorner.getX(),
+                        entry.position.getY() - minCorner.getY(),
+                        entry.position.getZ() - minCorner.getZ());
+                NextTickListEntry<T> newEntry = new NextTickListEntry<>(posRelative, entry.getTarget(), entry.field_235017_b_ - currentTime, entry.priority);
 
                 map.put(posRelative, newEntry);
             }
@@ -739,8 +739,8 @@ public class LitematicaSchematic
             BlockPos posAdj = pos.offset(dir);
             BlockState stateAdj = world.getBlockState(posAdj);
 
-            if (stateAdj.isOpaque() == false ||
-                stateAdj.isSideSolidFullSquare(world, posAdj, dir) == false)
+            if (stateAdj.isSolid() == false ||
+                stateAdj.isSolidSide(world, posAdj, dir) == false)
             {
                 return true;
             }
@@ -799,7 +799,7 @@ public class LitematicaSchematic
                 {
                     for (int x = startX; x <= endX; ++x)
                     {
-                        posMutable.set(x + offsetX, y + offsetY, z + offsetZ);
+                        posMutable.setPos(x + offsetX, y + offsetY, z + offsetZ);
 
                         if (visibleOnly && isExposed(world, posMutable) == false)
                         {
@@ -814,15 +814,15 @@ public class LitematicaSchematic
                             this.totalBlocksReadFromWorld++;
                         }
 
-                        if (state.getBlock().hasBlockEntity())
+                        if (state.getBlock().isTileEntityProvider())
                         {
-                            TileEntity te = world.getBlockEntity(posMutable);
+                            TileEntity te = world.getTileEntity(posMutable);
 
                             if (te != null)
                             {
                                 // TODO Add a TileEntity NBT cache from the Chunk packets, to get the original synced data (too)
                                 BlockPos pos = new BlockPos(x, y, z);
-                                CompoundNBT tag = te.toTag(new CompoundNBT());
+                                CompoundNBT tag = te.write(new CompoundNBT());
                                 NBTUtils.writeBlockPosToTag(pos, tag);
                                 tileEntityMap.put(pos, tag);
                             }
@@ -836,18 +836,18 @@ public class LitematicaSchematic
                 IntBoundingBox tickBox = IntBoundingBox.createProper(
                         offsetX + startX  , offsetY + startY  , offsetZ + startZ  ,
                         offsetX + endX + 1, offsetY + endY + 1, offsetZ + endZ + 1);
-                List<NextTickListEntry<Block>> blockTicks = ((ServerWorld) world).getBlockTickScheduler().getScheduledTicks(tickBox.toVanillaBox(), false, false);
+                List<NextTickListEntry<Block>> blockTicks = ((ServerWorld) world).getPendingBlockTicks().getPending(tickBox.toVanillaBox(), false, false);
 
                 if (blockTicks != null)
                 {
-                    this.getPendingTicksFromWorld(blockTickMap, blockTicks, minCorner, startY, tickBox.maxY, world.getTime());
+                    this.getPendingTicksFromWorld(blockTickMap, blockTicks, minCorner, startY, tickBox.maxY, world.getGameTime());
                 }
 
-                List<NextTickListEntry<Fluid>> fluidTicks = ((ServerWorld) world).getFluidTickScheduler().getScheduledTicks(tickBox.toVanillaBox(), false, false);
+                List<NextTickListEntry<Fluid>> fluidTicks = ((ServerWorld) world).getPendingFluidTicks().getPending(tickBox.toVanillaBox(), false, false);
 
                 if (fluidTicks != null)
                 {
-                    this.getPendingTicksFromWorld(fluidTickMap, fluidTicks, minCorner, startY, tickBox.maxY, world.getTime());
+                    this.getPendingTicksFromWorld(fluidTickMap, fluidTicks, minCorner, startY, tickBox.maxY, world.getGameTime());
                 }
             }
         }
@@ -971,18 +971,18 @@ public class LitematicaSchematic
         {
             for (NextTickListEntry<T> entry : tickMap.values())
             {
-                T target = entry.getObject();
+                T target = entry.getTarget();
                 String tagName;
                 ResourceLocation rl;
 
                 if (target instanceof Block)
                 {
-                    rl = Registry.BLOCK.getId((Block) target);
+                    rl = Registry.BLOCK.getKey((Block) target);
                     tagName = "Block";
                 }
                 else
                 {
-                    rl = Registry.FLUID.getId((Fluid) target);
+                    rl = Registry.FLUID.getKey((Fluid) target);
                     tagName = "Fluid";
                 }
 
@@ -991,11 +991,11 @@ public class LitematicaSchematic
                     CompoundNBT tag = new CompoundNBT();
 
                     tag.putString(tagName, rl.toString());
-                    tag.putInt("Priority", entry.priority.getIndex());
-                    tag.putInt("Time", (int) entry.time);
-                    tag.putInt("x", entry.pos.getX());
-                    tag.putInt("y", entry.pos.getY());
-                    tag.putInt("z", entry.pos.getZ());
+                    tag.putInt("Priority", entry.priority.getPriority());
+                    tag.putInt("Time", (int) entry.field_235017_b_);
+                    tag.putInt("x", entry.position.getX());
+                    tag.putInt("y", entry.position.getY());
+                    tag.putInt("z", entry.position.getZ());
 
                     tagList.add(tag);
                 }
@@ -1057,9 +1057,9 @@ public class LitematicaSchematic
 
     private void readSubRegionsFromNBT(CompoundNBT tag, int version, int minecraftDataVersion)
     {
-        for (String regionName : tag.getKeys())
+        for (String regionName : tag.keySet())
         {
-            if (tag.get(regionName).getType() == Constants.NBT.TAG_COMPOUND)
+            if (tag.get(regionName).getId() == Constants.NBT.TAG_COMPOUND)
             {
                 CompoundNBT regionTag = tag.getCompound(regionName);
                 BlockPos regionPos = NBTUtils.readBlockPos(regionTag.getCompound("Position"));
@@ -1168,7 +1168,7 @@ public class LitematicaSchematic
         for (int id = 0; id < size; ++id)
         {
             CompoundNBT tag = tagList.getCompound(id);
-            BlockState state = NBTUtil.toBlockState(tag);
+            BlockState state = NBTUtil.readBlockState(tag);
             list.add(state);
         }
 
@@ -1197,7 +1197,7 @@ public class LitematicaSchematic
 
     protected boolean readSpongePaletteFromTag(CompoundNBT tag, ILitematicaBlockStatePalette palette)
     {
-        final int size = tag.getKeys().size();
+        final int size = tag.keySet().size();
         List<BlockState> list = new ArrayList<>(size);
         BlockState air = Blocks.AIR.getDefaultState();
 
@@ -1206,7 +1206,7 @@ public class LitematicaSchematic
             list.add(air);
         }
 
-        for (String key : tag.getKeys())
+        for (String key : tag.keySet())
         {
             int id = tag.getInt(key);
             Optional<BlockState> stateOptional = BlockUtils.getBlockStateFromString(key);
@@ -1243,7 +1243,7 @@ public class LitematicaSchematic
         {
             CompoundNBT paletteTag = tag.getCompound("Palette");
             byte[] blockData = tag.getByteArray("BlockData");
-            int paletteSize = paletteTag.getKeys().size();
+            int paletteSize = paletteTag.keySet().size();
             LitematicaBlockStateContainer container = LitematicaBlockStateContainer.createContainer(paletteSize, blockData, size);
 
             if (container == null)
@@ -1344,7 +1344,7 @@ public class LitematicaSchematic
             this.getMetadata().setAuthor(tag.getString("author"));
         }
 
-        this.subRegionPositions.put(name, BlockPos.ORIGIN);
+        this.subRegionPositions.put(name, BlockPos.ZERO);
         this.subRegionSizes.put(name, new BlockPos(size));
         this.metadata.setName(name);
         this.metadata.setRegionCount(1);
@@ -1377,7 +1377,7 @@ public class LitematicaSchematic
             for (int id = 0; id < paletteSize; ++id)
             {
                 CompoundNBT t = paletteTag.getCompound(id);
-                BlockState state = NBTUtil.toBlockState(t);
+                BlockState state = NBTUtil.readBlockState(t);
                 list.add(state);
             }
 
@@ -1422,7 +1422,7 @@ public class LitematicaSchematic
                 this.getMetadata().setAuthor(tag.getString("author"));
             }
 
-            this.subRegionPositions.put(name, BlockPos.ORIGIN);
+            this.subRegionPositions.put(name, BlockPos.ZERO);
             this.subRegionSizes.put(name, new BlockPos(size));
             this.metadata.setName(name);
             this.metadata.setRegionCount(1);
@@ -1528,7 +1528,7 @@ public class LitematicaSchematic
         {
             ListNBT tagList = tag.getList(tagName, Constants.NBT.TAG_DOUBLE);
 
-            if (tagList.getElementType() == Constants.NBT.TAG_DOUBLE && tagList.size() == 3)
+            if (tagList.getTagType() == Constants.NBT.TAG_DOUBLE && tagList.size() == 3)
             {
                 return new Vector3d(tagList.getDouble(0), tagList.getDouble(1), tagList.getDouble(2));
             }
@@ -1556,7 +1556,7 @@ public class LitematicaSchematic
         for (int i = 0; i < size; ++i)
         {
             CompoundNBT tag = palette.getCompound(i);
-            BlockState state = NBTUtil.toBlockState(tag);
+            BlockState state = NBTUtil.readBlockState(tag);
 
             if (i > 0 || state != LitematicaBlockStateContainer.AIR_BLOCK_STATE)
             {
@@ -1644,7 +1644,7 @@ public class LitematicaSchematic
                 {
                     if (clazz instanceof Block && tag.contains("Block", Constants.NBT.TAG_STRING))
                     {
-                        target = (T) Registry.BLOCK.get(new ResourceLocation(tag.getString("Block")));
+                        target = (T) Registry.BLOCK.getOrDefault(new ResourceLocation(tag.getString("Block")));
 
                         if (target == null || target == Blocks.AIR)
                         {
@@ -1653,7 +1653,7 @@ public class LitematicaSchematic
                     }
                     else if (clazz instanceof Fluid && tag.contains("Fluid", Constants.NBT.TAG_STRING))
                     {
-                        target = (T) Registry.FLUID.get(new ResourceLocation(tag.getString("Fluid")));
+                        target = (T) Registry.FLUID.getOrDefault(new ResourceLocation(tag.getString("Fluid")));
 
                         if (target == null || target == Fluids.EMPTY)
                         {
@@ -1670,7 +1670,7 @@ public class LitematicaSchematic
                     BlockPos pos = new BlockPos(tag.getInt("x"), tag.getInt("y"), tag.getInt("z"));
                     // Note: the time is a relative delay at this point
                     int scheduledTime = tag.getInt("Time");
-                    TickPriority priority = TickPriority.byIndex(tag.getInt("Priority"));
+                    TickPriority priority = TickPriority.getPriority(tag.getInt("Priority"));
 
                     NextTickListEntry<T> entry = new NextTickListEntry<>(pos, target, scheduledTime, priority);
 

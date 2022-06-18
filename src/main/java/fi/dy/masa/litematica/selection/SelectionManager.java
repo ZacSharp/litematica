@@ -323,7 +323,7 @@ public class SelectionManager
         AreaSelection selection = new AreaSelection();
         selection.setName(name);
 //        BlockPos pos = fi.dy.masa.malilib.util.PositionUtils.getEntityBlockPos(this.mc.player);
-        BlockPos pos = new BlockPos(Math.floor(this.mc.player.getX()), Math.floor(this.mc.player.getY()), Math.floor(this.mc.player.getZ()));
+        BlockPos pos = new BlockPos(Math.floor(this.mc.player.getPosX()), Math.floor(this.mc.player.getPosY()), Math.floor(this.mc.player.getPosZ()));
         selection.createNewSubRegionBox(pos, name);
 
         this.selections.put(selectionId, selection);
@@ -341,7 +341,7 @@ public class SelectionManager
 
         if (selection != null && mc.player != null)
         {
-            BlockPos pos = new BlockPos(mc.player.getPos());
+            BlockPos pos = new BlockPos(mc.player.getPositionVec());
 
             if (selection.createNewSubRegionBox(pos, selection.getName()) != null)
             {
@@ -371,7 +371,7 @@ public class SelectionManager
                 return false;
             }
 
-            BlockPos pos = new BlockPos(mc.player.getPos());
+            BlockPos pos = new BlockPos(mc.player.getPositionVec());
 
             if (selection.createNewSubRegionBox(pos, name) != null)
             {
@@ -506,7 +506,7 @@ public class SelectionManager
                         trace.getHitSelectionBox(),
                         trace.getHitCorner(),
                         trace.getHitVec(),
-                        entity.getCameraPosVec(1f).distanceTo(trace.getHitVec()));
+                        entity.getEyePosition(1f).distanceTo(trace.getHitVec()));
                 InfoUtils.printActionbarMessage("litematica.message.grabbed_element_for_moving");
                 return true;
             }
@@ -814,7 +814,7 @@ public class SelectionManager
 
         public void moveElement(Entity entity)
         {
-            Vector3d newLookPos = entity.getCameraPosVec(1f).add(entity.getRotationVec(1f).multiply(this.grabDistance));
+            Vector3d newLookPos = entity.getEyePosition(1f).add(entity.getLook(1f).scale(this.grabDistance));
             Vector3d change = newLookPos.subtract(this.grabPosition);
 
             if ((this.grabbedCorner == Corner.NONE || this.grabbedCorner == Corner.CORNER_1) && this.grabbedBox.getPos1() != null)

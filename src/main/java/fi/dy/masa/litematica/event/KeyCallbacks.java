@@ -439,7 +439,7 @@ public class KeyCallbacks
                 {
                     // Only do the pick block here, if it's not bound to the use button.
                     // If it's bound to the use button, then it will be done from the input handling.
-                    if (KeybindMulti.hotkeyMatchesKeybind(Hotkeys.PICK_BLOCK_LAST, this.mc.options.keyUse) == false)
+                    if (KeybindMulti.hotkeyMatchesKeybind(Hotkeys.PICK_BLOCK_LAST, this.mc.gameSettings.keyBindUseItem) == false)
                     {
                         WorldUtils.doSchematicWorldPickBlock(false, this.mc);
                     }
@@ -596,7 +596,7 @@ public class KeyCallbacks
 
                     if (selection != null)
                     {
-                        BlockPos pos = new BlockPos(this.mc.player.getPos());
+                        BlockPos pos = new BlockPos(this.mc.player.getPositionVec());
 
                         if (mode == ToolMode.MOVE)
                         {
@@ -612,7 +612,7 @@ public class KeyCallbacks
                 }
                 else if (mode.getUsesSchematic())
                 {
-                    BlockPos pos = new BlockPos(this.mc.player.getPos());
+                    BlockPos pos = new BlockPos(this.mc.player.getPositionVec());
                     DataManager.getSchematicPlacementManager().setPositionOfCurrentSelectionTo(pos, this.mc);
                     return true;
                 }
@@ -643,7 +643,7 @@ public class KeyCallbacks
 
                     if (area != null)
                     {
-                        BlockPos pos = new BlockPos(this.mc.player.getPos());
+                        BlockPos pos = new BlockPos(this.mc.player.getPositionVec());
                         area.setExplicitOrigin(pos);
                         String posStr = String.format("x: %d, y: %d, z: %d", pos.getX(), pos.getY(), pos.getZ());
                         InfoUtils.printActionbarMessage("litematica.message.set_area_origin", posStr);
@@ -661,7 +661,7 @@ public class KeyCallbacks
 
                     if (area != null && area.getSelectedSubRegionBox() != null)
                     {
-                        BlockPos pos = new BlockPos(this.mc.player.getPos());
+                        BlockPos pos = new BlockPos(this.mc.player.getPositionVec());
                         Corner corner = key == Hotkeys.SET_SELECTION_BOX_POSITION_1.getKeybind() ? Corner.CORNER_1 : Corner.CORNER_2;
                         area.setSelectedSubRegionCornerPos(pos, corner);
 

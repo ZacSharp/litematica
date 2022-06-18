@@ -214,7 +214,7 @@ public class SchematicConverter
 
                     if (fixer != null)
                     {
-                        posMutable.set(x, y, z);
+                        posMutable.setPos(x, y, z);
                         BlockState stateFixed = fixer.fixState(reader, state, posMutable);
 
                         if (stateFixed != state)
@@ -313,7 +313,7 @@ public class SchematicConverter
 
         @Override
         @Nullable
-        public TileEntity getBlockEntity(BlockPos pos)
+        public TileEntity getTileEntity(BlockPos pos)
         {
             return null;
         }

@@ -11,6 +11,6 @@ import net.minecraft.world.IBlockReader;
 @Mixin(StairsBlock.class)
 public interface IMixinStairsBlock
 {
-    @Invoker("getStairShape")
+    @Invoker("getShapeProperty")
     public static StairsShape invokeGetStairShape(BlockState state, IBlockReader worldIn, BlockPos pos) { return null; }
 }

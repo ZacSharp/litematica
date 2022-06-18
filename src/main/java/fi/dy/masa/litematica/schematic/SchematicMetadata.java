@@ -12,7 +12,7 @@ public class SchematicMetadata
     private String name = "?";
     private String author = "Unknown";
     private String description = "";
-    private Vector3i enclosingSize = Vector3i.ZERO;
+    private Vector3i enclosingSize = Vector3i.NULL_VECTOR;
     private long timeCreated;
     private long timeModified;
     private int regionCount;
@@ -181,7 +181,7 @@ public class SchematicMetadata
         this.timeModified = nbt.getLong("TimeModified");
 
         Vector3i size = NBTUtils.readBlockPos(nbt.getCompound("EnclosingSize"));
-        this.enclosingSize = size != null ? size : BlockPos.ORIGIN;
+        this.enclosingSize = size != null ? size : BlockPos.ZERO;
 
         if (nbt.contains("PreviewImageData", Constants.NBT.TAG_INT_ARRAY))
         {

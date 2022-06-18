@@ -148,7 +148,7 @@ public class SchematicPlacingUtils
             return false;
         }
 
-        final Rotation rotationCombined = schematicPlacement.getRotation().rotate(placement.getRotation());
+        final Rotation rotationCombined = schematicPlacement.getRotation().add(placement.getRotation());
         final Mirror mirrorMain = schematicPlacement.getMirror();
         final BlockState barrier = Blocks.BARRIER.getDefaultState();
         Mirror mirrorSub = placement.getMirror();
@@ -174,10 +174,10 @@ public class SchematicPlacingUtils
                         continue;
                     }
 
-                    posMutable.set(x, y, z);
+                    posMutable.setPos(x, y, z);
                     CompoundNBT teNBT = blockEntityMap.get(posMutable);
 
-                    posMutable.set(posMinRel.getX() + x - regionPos.getX(),
+                    posMutable.setPos(posMinRel.getX() + x - regionPos.getX(),
                                    posMinRel.getY() + y - regionPos.getY(),
                                    posMinRel.getZ() + z - regionPos.getZ());
 
@@ -196,7 +196,7 @@ public class SchematicPlacingUtils
                     if (mirrorSub != Mirror.NONE)  { state = state.mirror(mirrorSub); }
                     if (rotationCombined != Rotation.NONE) { state = state.rotate(rotationCombined); }
 
-                    TileEntity te = world.getBlockEntity(pos);
+                    TileEntity te = world.getTileEntity(pos);
 
                     if (te != null)
                     {
@@ -210,7 +210,7 @@ public class SchematicPlacingUtils
 
                     if (world.setBlockState(pos, state, 0x12) && teNBT != null)
                     {
-                        te = world.getBlockEntity(pos);
+                        te = world.getTileEntity(pos);
 
                         if (te != null)
                         {
@@ -226,7 +226,7 @@ public class SchematicPlacingUtils
 
                             try
                             {
-                                te.fromTag(state, teNBT);
+                                te.read(state, teNBT);
 
                                 if (ignoreInventories && te instanceof IInventory)
                                 {
@@ -251,11 +251,11 @@ public class SchematicPlacingUtils
                 {
                     for (int x = startX; x <= endX; ++x)
                     {
-                        posMutable.set(posMinRel.getX() + x - regionPos.getX(),
+                        posMutable.setPos(posMinRel.getX() + x - regionPos.getX(),
                                        posMinRel.getY() + y - regionPos.getY(),
                                        posMinRel.getZ() + z - regionPos.getZ());
                         BlockPos pos = PositionUtils.getTransformedPlacementPosition(posMutable, schematicPlacement, placement).add(origin);
-                        world.updateNeighbors(pos, world.getBlockState(pos).getBlock());
+                        world.updateBlock(pos, world.getBlockState(pos).getBlock());
                     }
                 }
             }
@@ -286,7 +286,7 @@ public class SchematicPlacingUtils
         final double maxX = (chunkPos.x << 4) + 16;
         final double maxZ = (chunkPos.z << 4) + 16;
 
-        final Rotation rotationCombined = schematicPlacement.getRotation().rotate(placement.getRotation());
+        final Rotation rotationCombined = schematicPlacement.getRotation().add(placement.getRotation());
         final Mirror mirrorMain = schematicPlacement.getMirror();
         Mirror mirrorSub = placement.getMirror();
 
@@ -323,13 +323,13 @@ public class SchematicPlacingUtils
     public static void rotateEntity(Entity entity, double x, double y, double z,
                                     Rotation rotationCombined, Mirror mirrorMain, Mirror mirrorSub)
     {
-        float rotationYaw = entity.yaw;
+        float rotationYaw = entity.rotationYaw;
 
-        if (mirrorMain != Mirror.NONE)         { rotationYaw = entity.applyMirror(mirrorMain); }
-        if (mirrorSub != Mirror.NONE)          { rotationYaw = entity.applyMirror(mirrorSub); }
-        if (rotationCombined != Rotation.NONE) { rotationYaw += entity.yaw - entity.applyRotation(rotationCombined); }
+        if (mirrorMain != Mirror.NONE)         { rotationYaw = entity.getMirroredYaw(mirrorMain); }
+        if (mirrorSub != Mirror.NONE)          { rotationYaw = entity.getMirroredYaw(mirrorSub); }
+        if (rotationCombined != Rotation.NONE) { rotationYaw += entity.rotationYaw - entity.getRotatedYaw(rotationCombined); }
 
-        entity.refreshPositionAndAngles(x, y, z, rotationYaw, entity.pitch);
-        EntityUtils.setEntityRotations(entity, rotationYaw, entity.pitch);
+        entity.setLocationAndAngles(x, y, z, rotationYaw, entity.rotationPitch);
+        EntityUtils.setEntityRotations(entity, rotationYaw, entity.rotationPitch);
     }
 }

@@ -20,11 +20,11 @@ public class WallStateFixer implements SchematicConversionFixers.IStateFixer
 {
     public static final WallStateFixer INSTANCE = new WallStateFixer();
 
-    private static final VoxelShape SHAPE_PILLAR = Block.createCuboidShape(7.0D, 0.0D, 7.0D, 9.0D, 16.0D, 9.0D);
-    private static final VoxelShape SHAPE_NORTH = Block.createCuboidShape(7.0D, 0.0D, 0.0D, 9.0D, 16.0D, 9.0D);
-    private static final VoxelShape SHAPE_SOUTH = Block.createCuboidShape(7.0D, 0.0D, 7.0D, 9.0D, 16.0D, 16.0D);
-    private static final VoxelShape SHAPE_WEST = Block.createCuboidShape(0.0D, 0.0D, 7.0D, 9.0D, 16.0D, 9.0D);
-    private static final VoxelShape SHAPE_EAST = Block.createCuboidShape(7.0D, 0.0D, 7.0D, 16.0D, 16.0D, 9.0D);
+    private static final VoxelShape SHAPE_PILLAR = Block.makeCuboidShape(7.0D, 0.0D, 7.0D, 9.0D, 16.0D, 9.0D);
+    private static final VoxelShape SHAPE_NORTH = Block.makeCuboidShape(7.0D, 0.0D, 0.0D, 9.0D, 16.0D, 9.0D);
+    private static final VoxelShape SHAPE_SOUTH = Block.makeCuboidShape(7.0D, 0.0D, 7.0D, 9.0D, 16.0D, 16.0D);
+    private static final VoxelShape SHAPE_WEST = Block.makeCuboidShape(0.0D, 0.0D, 7.0D, 9.0D, 16.0D, 9.0D);
+    private static final VoxelShape SHAPE_EAST = Block.makeCuboidShape(7.0D, 0.0D, 7.0D, 16.0D, 16.0D, 9.0D);
 
     @Override
     public BlockState fixState(IBlockReaderWithData reader, BlockState state, BlockPos pos)
@@ -42,10 +42,10 @@ public class WallStateFixer implements SchematicConversionFixers.IStateFixer
         BlockState stateWest = world.getBlockState(posWest);
         BlockState stateUp = world.getBlockState(posUp);
 
-        boolean connectNorth = this.shouldConnectTo(stateNorth, stateNorth.isSideSolidFullSquare(world, posNorth, Direction.SOUTH), Direction.SOUTH);
-        boolean connectEast  = this.shouldConnectTo(stateEast,  stateEast .isSideSolidFullSquare(world, posEast, Direction.WEST), Direction.WEST);
-        boolean connectSouth = this.shouldConnectTo(stateSouth, stateSouth.isSideSolidFullSquare(world, posSouth, Direction.NORTH), Direction.NORTH);
-        boolean connectWest  = this.shouldConnectTo(stateWest,  stateWest .isSideSolidFullSquare(world, posWest, Direction.EAST), Direction.EAST);
+        boolean connectNorth = this.shouldConnectTo(stateNorth, stateNorth.isSolidSide(world, posNorth, Direction.SOUTH), Direction.SOUTH);
+        boolean connectEast  = this.shouldConnectTo(stateEast,  stateEast .isSolidSide(world, posEast, Direction.WEST), Direction.WEST);
+        boolean connectSouth = this.shouldConnectTo(stateSouth, stateSouth.isSolidSide(world, posSouth, Direction.NORTH), Direction.NORTH);
+        boolean connectWest  = this.shouldConnectTo(stateWest,  stateWest .isSolidSide(world, posWest, Direction.EAST), Direction.EAST);
         BlockState baseState = state.getBlock().getDefaultState().with(WallBlock.WATERLOGGED, fluidState.getFluid() == Fluids.WATER);
 
         return this.getWallStateWithConnections(world, baseState, posUp, stateUp, connectNorth, connectEast, connectSouth, connectWest);
@@ -60,7 +60,7 @@ public class WallStateFixer implements SchematicConversionFixers.IStateFixer
                                                    boolean canConnectSouth,
                                                    boolean canConnectWest)
     {
-        VoxelShape shapeAbove = stateUp.getCollisionShape(worldView, pos).getFace(Direction.DOWN);
+        VoxelShape shapeAbove = stateUp.getCollisionShapeUncached(worldView, pos).project(Direction.DOWN);
         BlockState stateWithSides = this.getWallSideConnections(baseState, canConnectNorth, canConnectEast, canConnectSouth, canConnectWest, shapeAbove);
 
         return stateWithSides.with(WallBlock.UP, this.shouldConnectUp(stateWithSides, stateUp, shapeAbove));
@@ -74,10 +74,10 @@ public class WallStateFixer implements SchematicConversionFixers.IStateFixer
                                                      VoxelShape shapeAbove)
     {
         return blockState
-                       .with(WallBlock.NORTH_SHAPE, this.getConnectionShape(canConnectNorth, shapeAbove, SHAPE_NORTH))
-                       .with(WallBlock.EAST_SHAPE,  this.getConnectionShape(canConnectEast, shapeAbove, SHAPE_EAST))
-                       .with(WallBlock.SOUTH_SHAPE, this.getConnectionShape(canConnectSouth, shapeAbove, SHAPE_SOUTH))
-                       .with(WallBlock.WEST_SHAPE,  this.getConnectionShape(canConnectWest, shapeAbove, SHAPE_WEST));
+                       .with(WallBlock.WALL_HEIGHT_NORTH, this.getConnectionShape(canConnectNorth, shapeAbove, SHAPE_NORTH))
+                       .with(WallBlock.WALL_HEIGHT_EAST,  this.getConnectionShape(canConnectEast, shapeAbove, SHAPE_EAST))
+                       .with(WallBlock.WALL_HEIGHT_SOUTH, this.getConnectionShape(canConnectSouth, shapeAbove, SHAPE_SOUTH))
+                       .with(WallBlock.WALL_HEIGHT_WEST,  this.getConnectionShape(canConnectWest, shapeAbove, SHAPE_WEST));
     }
 
     private boolean shouldConnectTo(BlockState state, boolean faceFullSquare, Direction side)
@@ -85,9 +85,9 @@ public class WallStateFixer implements SchematicConversionFixers.IStateFixer
         Block block = state.getBlock();
 
         return state.isIn(BlockTags.WALLS) ||
-               Block.cannotConnect(block) == false && faceFullSquare ||
+               Block.cannotAttach(block) == false && faceFullSquare ||
                block instanceof PaneBlock ||
-               block instanceof FenceGateBlock && FenceGateBlock.canWallConnect(state, side);
+               block instanceof FenceGateBlock && FenceGateBlock.isParallel(state, side);
     }
 
     private boolean shouldConnectUp(BlockState blockState, BlockState stateUp, VoxelShape shapeAbove)
@@ -100,10 +100,10 @@ public class WallStateFixer implements SchematicConversionFixers.IStateFixer
         }
         else
         {
-            WallHeight shapeNorth = blockState.get(WallBlock.NORTH_SHAPE);
-            WallHeight shapeSouth = blockState.get(WallBlock.SOUTH_SHAPE);
-            WallHeight shapeEast  = blockState.get(WallBlock.EAST_SHAPE);
-            WallHeight shapeWest  = blockState.get(WallBlock.WEST_SHAPE);
+            WallHeight shapeNorth = blockState.get(WallBlock.WALL_HEIGHT_NORTH);
+            WallHeight shapeSouth = blockState.get(WallBlock.WALL_HEIGHT_SOUTH);
+            WallHeight shapeEast  = blockState.get(WallBlock.WALL_HEIGHT_EAST);
+            WallHeight shapeWest  = blockState.get(WallBlock.WALL_HEIGHT_WEST);
             boolean unconnectedNorth = shapeNorth == WallHeight.NONE;
             boolean unconnectedSouth = shapeSouth == WallHeight.NONE;
             boolean unconnectedEast  = shapeEast == WallHeight.NONE;
@@ -146,6 +146,6 @@ public class WallStateFixer implements SchematicConversionFixers.IStateFixer
 
     private boolean shapesDoNotIntersect(VoxelShape voxelShape, VoxelShape voxelShape2)
     {
-        return VoxelShapes.matchesAnywhere(voxelShape2, voxelShape, IBooleanFunction.ONLY_FIRST) == false;
+        return VoxelShapes.compare(voxelShape2, voxelShape, IBooleanFunction.ONLY_FIRST) == false;
     }
 }

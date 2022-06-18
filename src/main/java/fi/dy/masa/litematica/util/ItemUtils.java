@@ -31,7 +31,7 @@ public class ItemUtils
 
         if (tagReference != null && tagToCheck != null)
         {
-            Set<String> keysReference = new HashSet<>(tagReference.getKeys());
+            Set<String> keysReference = new HashSet<>(tagReference.keySet());
 
             for (String key : keysReference)
             {
@@ -87,7 +87,7 @@ public class ItemUtils
 
         if (stack.isEmpty())
         {
-            stack = state.getBlock().getPickStack(world, pos, state);
+            stack = state.getBlock().getItem(world, pos, state);
         }
 
         if (stack.isEmpty())
@@ -128,7 +128,7 @@ public class ItemUtils
 
     public static ItemStack storeTEInStack(ItemStack stack, TileEntity te)
     {
-        CompoundNBT nbt = te.toTag(new CompoundNBT());
+        CompoundNBT nbt = te.write(new CompoundNBT());
 
         if (nbt.contains("Owner") && stack.getItem() instanceof BlockItem &&
             ((BlockItem) stack.getItem()).getBlock() instanceof AbstractSkullBlock)
@@ -146,10 +146,10 @@ public class ItemUtils
             CompoundNBT tagLore = new CompoundNBT();
             ListNBT tagList = new ListNBT();
 
-            tagList.add(StringNBT.of("(+NBT)"));
+            tagList.add(StringNBT.valueOf("(+NBT)"));
             tagLore.put("Lore", tagList);
-            stack.putSubTag("display", tagLore);
-            stack.putSubTag("TileEntityTag", nbt);
+            stack.setTagInfo("display", tagLore);
+            stack.setTagInfo("TileEntityTag", nbt);
 
             return stack;
         }
@@ -159,10 +159,10 @@ public class ItemUtils
     {
         if (stack.isEmpty() == false)
         {
-            ResourceLocation rl = Registry.ITEM.getId(stack.getItem());
+            ResourceLocation rl = Registry.ITEM.getKey(stack.getItem());
 
             return String.format("[%s - display: %s - NBT: %s] (%s)",
-                    rl != null ? rl.toString() : "null", stack.getName().getString(),
+                    rl != null ? rl.toString() : "null", stack.getDisplayName().getString(),
                     stack.getTag() != null ? stack.getTag().toString() : "<no NBT>", stack.toString());
         }
 

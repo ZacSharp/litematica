@@ -395,7 +395,7 @@ public class GuiSchematicManager extends GuiSchematicBrowserBase implements ISel
                     Minecraft mc = Minecraft.getInstance();
                     int screenWidth = GuiUtils.getDisplayWidth();
                     int screenHeight = GuiUtils.getDisplayHeight();
-                    NativeImage screenshot = ScreenShotHelper.takeScreenshot(screenWidth, screenHeight, mc.getFramebuffer());
+                    NativeImage screenshot = ScreenShotHelper.createScreenshot(screenWidth, screenHeight, mc.getFramebuffer());
 
                     int x = screenshot.getWidth() >= screenshot.getHeight() ? (screenshot.getWidth() - screenshot.getHeight()) / 2 : 0;
                     int y = screenshot.getHeight() >= screenshot.getWidth() ? (screenshot.getHeight() - screenshot.getWidth()) / 2 : 0;

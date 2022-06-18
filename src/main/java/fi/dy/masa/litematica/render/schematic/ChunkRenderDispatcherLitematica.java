@@ -263,7 +263,7 @@ public class ChunkRenderDispatcherLitematica
     public ListenableFuture<Object> uploadChunkBlocks(final RenderType layer, final BufferBuilder buffer,
             final ChunkRendererSchematicVbo renderChunk, final ChunkRenderDataSchematic chunkRenderData, final double distanceSq)
     {
-        if (Minecraft.getInstance().isOnThread())
+        if (Minecraft.getInstance().isOnExecutionThread())
         {
             //if (GuiBase.isCtrlDown()) System.out.printf("uploadChunkBlocks()\n");
             this.uploadVertexBuffer(buffer, renderChunk.getBlocksVertexBufferByLayer(layer));
@@ -291,7 +291,7 @@ public class ChunkRenderDispatcherLitematica
     public ListenableFuture<Object> uploadChunkOverlay(final OverlayRenderType type, final BufferBuilder buffer,
             final ChunkRendererSchematicVbo renderChunk, final ChunkRenderDataSchematic compiledChunk, final double distanceSq)
     {
-        if (Minecraft.getInstance().isOnThread())
+        if (Minecraft.getInstance().isOnExecutionThread())
         {
             //if (GuiBase.isCtrlDown()) System.out.printf("uploadChunkOverlay()\n");
             this.uploadVertexBuffer(buffer, renderChunk.getOverlayVertexBuffer(type));
@@ -318,7 +318,7 @@ public class ChunkRenderDispatcherLitematica
 
     private void uploadVertexBuffer(BufferBuilder buffer, VertexBuffer vertexBuffer)
     {
-        vertexBuffer.submitUpload(buffer);
+        vertexBuffer.uploadLater(buffer);
     }
 
     public void clearChunkUpdates()

@@ -32,7 +32,7 @@ public abstract class GuiSchematicSaveBase extends GuiSchematicBrowserBase imple
         this.schematic = schematic;
 
         this.textField = new GuiTextFieldGeneric(10, 32, 160, 20, this.textRenderer);
-        this.textField.setMaxLength(256);
+        this.textField.setMaxStringLength(256);
         this.textField.setFocused(true);
 
         this.checkboxSaveFromSchematicWorld = new WidgetCheckBox(0, 0, Icons.CHECKBOX_UNSELECTED, Icons.CHECKBOX_SELECTED, "Save from schematic world", "If enabled, then the schematic is created by saving the\ncontents of the selection from the schematic world\ninstead of the normal vanilla world.\nThis allows you to combine or trim schematics without having\nto paste them to a temporary creative world.");
@@ -51,10 +51,10 @@ public abstract class GuiSchematicSaveBase extends GuiSchematicBrowserBase imple
 
         boolean focused = this.textField.isFocused();
         String text = this.textField.getText();
-        int pos = this.textField.getCursor();
+        int pos = this.textField.getCursorPosition();
         this.textField = new GuiTextFieldGeneric(10, 32, this.width - 196, 20, this.textRenderer);
         this.textField.setText(text);
-        this.textField.setCursor(pos);
+        this.textField.setCursorPosition(pos);
         this.textField.setFocused(focused);
 
         DirectoryEntry entry = this.getListWidget().getLastSelectedEntry();
@@ -97,7 +97,7 @@ public abstract class GuiSchematicSaveBase extends GuiSchematicBrowserBase imple
     {
         this.lastText = text;
         this.textField.setText(text);
-        this.textField.setCursorToEnd();
+        this.textField.setCursorPositionEnd();
     }
 
     protected String getTextFieldText()

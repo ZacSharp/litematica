@@ -409,8 +409,8 @@ public class SchematicVerifier extends TaskBase implements IInfoHudRenderer
             {
                 BlockPos pos = iter.next();
 
-                if (this.worldClient.isChunkLoaded(pos) &&
-                    this.worldSchematic.isChunkLoaded(pos))
+                if (this.worldClient.isBlockLoaded(pos) &&
+                    this.worldSchematic.isBlockLoaded(pos))
                 {
                     BlockMismatch mismatch = this.blockMismatches.get(pos);
 
@@ -494,7 +494,7 @@ public class SchematicVerifier extends TaskBase implements IInfoHudRenderer
                 }
 
                 // Require the surrounding chunks in the client world to be loaded as well
-                if (count == 9 && this.worldSchematic.getChunkProvider().isChunkLoaded(pos.x, pos.z))
+                if (count == 9 && this.worldSchematic.getChunkProvider().chunkExists(pos.x, pos.z))
                 {
                     Chunk chunkClient = this.worldClient.getChunk(pos.x, pos.z);
                     Chunk chunkSchematic = this.worldSchematic.getChunk(pos.x, pos.z);
@@ -640,8 +640,8 @@ public class SchematicVerifier extends TaskBase implements IInfoHudRenderer
                 @Override
                 public int compare(Pair<BlockState, BlockState> o1, Pair<BlockState, BlockState> o2)
                 {
-                    String name1 = Registry.BLOCK.getId(o1.getLeft().getBlock()).toString();
-                    String name2 = Registry.BLOCK.getId(o2.getLeft().getBlock()).toString();
+                    String name1 = Registry.BLOCK.getKey(o1.getLeft().getBlock()).toString();
+                    String name2 = Registry.BLOCK.getKey(o2.getLeft().getBlock()).toString();
 
                     int val = name1.compareTo(name2);
 
@@ -655,8 +655,8 @@ public class SchematicVerifier extends TaskBase implements IInfoHudRenderer
                     }
                     else
                     {
-                        name1 = Registry.BLOCK.getId(o1.getRight().getBlock()).toString();
-                        name2 = Registry.BLOCK.getId(o2.getRight().getBlock()).toString();
+                        name1 = Registry.BLOCK.getKey(o1.getRight().getBlock()).toString();
+                        name2 = Registry.BLOCK.getKey(o2.getRight().getBlock()).toString();
 
                         return name1.compareTo(name2);
                     }
@@ -690,7 +690,7 @@ public class SchematicVerifier extends TaskBase implements IInfoHudRenderer
             {
                 for (int x = startX; x <= endX; ++x)
                 {
-                    MUTABLE_POS.set(x, y, z);
+                    MUTABLE_POS.setPos(x, y, z);
                     BlockState stateClient = chunkClient.getBlockState(MUTABLE_POS);
                     BlockState stateSchematic = chunkSchematic.getBlockState(MUTABLE_POS);
 
@@ -780,7 +780,7 @@ public class SchematicVerifier extends TaskBase implements IInfoHudRenderer
             int maxEntries = Configs.InfoOverlays.VERIFIER_ERROR_HILIGHT_MAX_POSITIONS.getIntegerValue();
 
             // This needs to happen first
-            BlockPos centerPos = new BlockPos(this.mc.player.getPos());
+            BlockPos centerPos = new BlockPos(this.mc.player.getPositionVec());
             this.updateClosestPositions(centerPos, maxEntries);
             this.combineClosestPositions(centerPos, maxEntries);
 
@@ -1033,8 +1033,8 @@ public class SchematicVerifier extends TaskBase implements IInfoHudRenderer
         @Override
         public int compare(MismatchRenderPos pos1, MismatchRenderPos pos2)
         {
-            double dist1 = pos1.pos.getSquaredDistance(this.posReference);
-            double dist2 = pos2.pos.getSquaredDistance(this.posReference);
+            double dist1 = pos1.pos.distanceSq(this.posReference);
+            double dist2 = pos2.pos.distanceSq(this.posReference);
 
             if (dist1 == dist2)
             {

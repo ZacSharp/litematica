@@ -254,7 +254,7 @@ public class ToolHud extends InfoHud
                 lines.add(StringUtils.translate("litematica.hud.area_selection.origin", green + str + rst));
 
                 BlockState state = mode.getPrimaryBlock();
-                ItemStack stack = this.mc.player.getMainHandStack();
+                ItemStack stack = this.mc.player.getHeldItemMainhand();
 
                 if (state != null && mode == ToolMode.REBUILD &&
                     (stack.isEmpty() || EntityUtils.hasToolItemInHand(this.mc.player, Hand.MAIN_HAND)))
@@ -332,13 +332,13 @@ public class ToolHud extends InfoHud
         String green = GuiBase.TXT_GREEN;
         String rst = GuiBase.TXT_RST;
 
-        strBlock = green + state.getBlock().getName().getString() + rst;
+        strBlock = green + state.getBlock().getTranslatedName().getString() + rst;
         Direction facing = BlockUtils.getFirstPropertyFacingValue(state);
 
         if (facing != null)
         {
             String gold = GuiBase.TXT_GOLD;
-            String strFacing = gold + facing.getName().toLowerCase() + rst;
+            String strFacing = gold + facing.getName2().toLowerCase() + rst;
             strBlock += " - " + StringUtils.translate("litematica.tool_hud.facing", strFacing);
         }
 

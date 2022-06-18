@@ -191,7 +191,7 @@ public class GuiAreaSelectionEditorNormal extends GuiListBase<String, WidgetSele
     protected void createOrigin()
     {
 //        BlockPos origin = fi.dy.masa.malilib.util.PositionUtils.getEntityBlockPos(this.mc.player);
-        BlockPos origin = new BlockPos(Math.floor(this.mc.player.getX()), Math.floor(this.mc.player.getY()), Math.floor(this.mc.player.getZ()));;
+        BlockPos origin = new BlockPos(Math.floor(this.mc.player.getPosX()), Math.floor(this.mc.player.getPosY()), Math.floor(this.mc.player.getPosZ()));;
         this.selection.setExplicitOrigin(origin);
     }
 
@@ -513,7 +513,7 @@ public class GuiAreaSelectionEditorNormal extends GuiListBase<String, WidgetSele
                     if (this.parent.mc.player != null)
                     {
 //                        BlockPos pos = fi.dy.masa.malilib.util.PositionUtils.getEntityBlockPos(this.parent.mc.player);
-                        BlockPos pos = new BlockPos(Math.floor(this.parent.mc.player.getX()), Math.floor(this.parent.mc.player.getY()), Math.floor(this.parent.mc.player.getZ()));
+                        BlockPos pos = new BlockPos(Math.floor(this.parent.mc.player.getPosX()), Math.floor(this.parent.mc.player.getPosY()), Math.floor(this.parent.mc.player.getPosZ()));
 
                         if (this.corner == Corner.NONE)
                         {

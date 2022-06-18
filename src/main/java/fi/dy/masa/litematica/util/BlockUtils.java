@@ -30,14 +30,14 @@ public class BlockUtils
         {
             ResourceLocation id = new ResourceLocation(blockName);
 
-            if (Registry.BLOCK.containsId(id))
+            if (Registry.BLOCK.containsKey(id))
             {
-                Block block = Registry.BLOCK.get(id);
+                Block block = Registry.BLOCK.getOrDefault(id);
                 BlockState state = block.getDefaultState();
 
                 if (index != -1 && str.length() > (index + 4) && str.charAt(str.length() - 1) == ']')
                 {
-                    StateContainer<Block, BlockState> stateManager = block.getStateManager();
+                    StateContainer<Block, BlockState> stateManager = block.getStateContainer();
                     String propStr = str.substring(index + 1, str.length() - 1);
 
                     for (String propAndVal : COMMA_SPLITTER.split(propStr))
@@ -85,6 +85,6 @@ public class BlockUtils
     @Nullable
     public static <T extends Comparable<T>> T getPropertyValueByName(Property<T> prop, String valStr)
     {
-        return prop.parse(valStr).orElse(null);
+        return prop.parseValue(valStr).orElse(null);
     }
 }

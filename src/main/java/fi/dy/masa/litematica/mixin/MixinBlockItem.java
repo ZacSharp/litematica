@@ -22,17 +22,17 @@ public abstract class MixinBlockItem extends Item
         super(builder);
     }
 
-    @Shadow protected abstract BlockState getPlacementState(BlockItemUseContext context);
+    @Shadow protected abstract BlockState getStateForPlacement(BlockItemUseContext context);
     @Shadow protected abstract boolean canPlace(BlockItemUseContext context, BlockState state);
     @Shadow public abstract Block getBlock();
 
-    @Inject(method = "getPlacementState", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getStateForPlacement", at = @At("HEAD"), cancellable = true)
     private void modifyPlacementState(BlockItemUseContext ctx, CallbackInfoReturnable<BlockState> cir)
     {
         if (Configs.Generic.EASY_PLACE_MODE.getBooleanValue() &&
             Configs.Generic.EASY_PLACE_SP_HANDLING.getBooleanValue())
         {
-            BlockState stateOrig = this.getBlock().getPlacementState(ctx);
+            BlockState stateOrig = this.getBlock().getStateForPlacement(ctx);
 
             if (stateOrig != null && this.canPlace(ctx, stateOrig))
             {

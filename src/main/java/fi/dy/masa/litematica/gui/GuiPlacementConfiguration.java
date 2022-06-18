@@ -66,7 +66,7 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
         int y = 22;
 
         this.textFieldRename = new GuiTextFieldGeneric(x, y + 2, width, 16, this.textRenderer);
-        this.textFieldRename.setMaxLength(256);
+        this.textFieldRename.setMaxStringLength(256);
         this.textFieldRename.setText(this.placement.getName());
         this.addTextField(this.textFieldRename, null);
         this.createButton(x + width + 4, y, -1, ButtonListener.Type.RENAME_PLACEMENT);
@@ -373,7 +373,7 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
 
                 case MOVE_TO_PLAYER:
                 {
-                    BlockPos pos = new BlockPos(mc.player.getPos());
+                    BlockPos pos = new BlockPos(mc.player.getPositionVec());
                     this.placement.setOrigin(pos, this.parent);
                     break;
                 }

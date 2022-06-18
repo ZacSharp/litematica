@@ -31,7 +31,7 @@ public class AreaSelection
     protected final Map<String, Box> subRegionBoxes = new HashMap<>();
     protected String name = "Unnamed";
     protected boolean originSelected;
-    protected BlockPos calculatedOrigin = BlockPos.ORIGIN;
+    protected BlockPos calculatedOrigin = BlockPos.ZERO;
     protected boolean calculatedOriginDirty = true;
     @Nullable protected BlockPos explicitOrigin = null;
     @Nullable protected String currentBox;
@@ -149,7 +149,7 @@ public class AreaSelection
         }
         else
         {
-            this.calculatedOrigin = BlockPos.ORIGIN;
+            this.calculatedOrigin = BlockPos.ZERO;
         }
 
         this.calculatedOriginDirty = false;

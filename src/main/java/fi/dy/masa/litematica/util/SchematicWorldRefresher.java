@@ -111,7 +111,7 @@ public class SchematicWorldRefresher implements IRangeChangeListener
 
         if (world != null)
         {
-            if (world.getChunkProvider().isChunkLoaded(chunkX, chunkZ) &&
+            if (world.getChunkProvider().chunkExists(chunkX, chunkZ) &&
                 WorldUtils.isClientChunkLoaded(this.mc.world, chunkX, chunkZ))
             {
                 world.scheduleChunkRenders(chunkX, chunkZ);
@@ -125,7 +125,7 @@ public class SchematicWorldRefresher implements IRangeChangeListener
 
         if (world != null)
         {
-            if (world.getChunkProvider().isChunkLoaded(chunkX, chunkZ) &&
+            if (world.getChunkProvider().chunkExists(chunkX, chunkZ) &&
                 WorldUtils.isClientChunkLoaded(this.mc.world, chunkX, chunkZ))
             {
                 world.scheduleBlockRenders(chunkX, chunkY, chunkZ);
@@ -142,7 +142,7 @@ public class SchematicWorldRefresher implements IRangeChangeListener
             int chunkX = pos.getX() >> 4;
             int chunkZ = pos.getZ() >> 4;
 
-            if (world.getChunkProvider().isChunkLoaded(chunkX, chunkZ) &&
+            if (world.getChunkProvider().chunkExists(chunkX, chunkZ) &&
                 WorldUtils.isClientChunkLoaded(this.mc.world, chunkX, chunkZ))
             {
                 world.scheduleBlockRenders(chunkX, pos.getY() >> 4, chunkZ);

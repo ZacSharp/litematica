@@ -16,7 +16,7 @@ import fi.dy.masa.malilib.gui.GuiBase;
 @Mixin(DebugOverlayGui.class)
 public abstract class MixinDebugHud extends AbstractGui
 {
-    @Inject(method = "getLeftText", at = @At("RETURN"))
+    @Inject(method = "getDebugInfoLeft", at = @At("RETURN"))
     private void addDebugLines(CallbackInfoReturnable<List<String>> cir)
     {
         WorldSchematic world = SchematicWorldHandler.getSchematicWorld();
@@ -31,7 +31,7 @@ public abstract class MixinDebugHud extends AbstractGui
 
             list.add(String.format("%s[Litematica]%s %s C#: %d", pre, rst, renderer.getDebugInfoRenders(), world.getChunkProvider().getLoadedChunks().size()));
 
-            String str = String.format("E: %d TE: %d", world.getRegularEntityCount(), world.blockEntities.size());
+            String str = String.format("E: %d TE: %d", world.getRegularEntityCount(), world.loadedTileEntityList.size());
             list.add(String.format("%s[Litematica]%s %s %s", pre, rst, renderer.getDebugInfoEntities(), str));
         }
     }

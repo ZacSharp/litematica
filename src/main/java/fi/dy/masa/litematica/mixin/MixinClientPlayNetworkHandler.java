@@ -17,17 +17,17 @@ import fi.dy.masa.litematica.util.SchematicWorldRefresher;
 @Mixin(ClientPlayNetHandler.class)
 public abstract class MixinClientPlayNetworkHandler
 {
-    @Inject(method = "onChunkData", at = @At("RETURN"))
+    @Inject(method = "handleChunkData", at = @At("RETURN"))
     private void onChunkData(SChunkDataPacket packetIn, CallbackInfo ci)
     {
         if (Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
             Configs.Visuals.ENABLE_SCHEMATIC_RENDERING.getBooleanValue())
         {
-            SchematicWorldRefresher.INSTANCE.markSchematicChunksForRenderUpdate(packetIn.getX(), packetIn.getZ());
+            SchematicWorldRefresher.INSTANCE.markSchematicChunksForRenderUpdate(packetIn.getChunkX(), packetIn.getChunkZ());
         }
     }
 
-    @Inject(method = "onChunkDeltaUpdate", at = @At("RETURN"))
+    @Inject(method = "handleMultiBlockChange", at = @At("RETURN"))
     private void onChunkDelta(SMultiBlockChangePacket packet, CallbackInfo ci)
     {
         if (Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
@@ -35,11 +35,11 @@ public abstract class MixinClientPlayNetworkHandler
         {
             SectionPos pos = ((IMixinChunkDeltaUpdateS2CPacket) packet).litematica_getSection();
             SchematicWorldRefresher.INSTANCE.markSchematicChunksForRenderUpdate(pos.getX(), pos.getY(), pos.getZ());
-            packet.visitUpdates((p, s) -> SchematicVerifier.markVerifierBlockChanges(p));
+            packet.alterBlock((p, s) -> SchematicVerifier.markVerifierBlockChanges(p));
         }
     }
 
-    @Inject(method = "onUnloadChunk", at = @At("RETURN"))
+    @Inject(method = "processChunkUnload", at = @At("RETURN"))
     private void onChunkUnload(SUnloadChunkPacket packet, CallbackInfo ci)
     {
         if (Configs.Generic.LOAD_ENTIRE_SCHEMATICS.getBooleanValue() == false)

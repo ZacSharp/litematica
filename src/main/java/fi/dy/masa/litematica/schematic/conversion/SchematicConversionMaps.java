@@ -165,7 +165,7 @@ public class SchematicConversionMaps
             }
 
             // Store the id + meta => state maps before renaming the block for the state <=> state maps
-            BlockState state = NBTUtil.toBlockState(newStateTag);
+            BlockState state = NBTUtil.readBlockState(newStateTag);
             //System.out.printf("id: %5d, state: %s, tag: %s\n", idMeta, state, newStateTag);
             ID_META_TO_BLOCKSTATE.putIfAbsent(idMeta, state);
 
@@ -223,7 +223,7 @@ public class SchematicConversionMaps
 
                 // Same property names and same number of properties - just remap the block name.
                 // FIXME Is this going to be correct for everything?
-                if (oldStateTag != null && newStateTagIn.getKeys().equals(oldStateTag.getKeys()))
+                if (oldStateTag != null && newStateTagIn.keySet().equals(oldStateTag.keySet()))
                 {
                     String oldBlockName = oldStateTag.getString("Name");
                     String newBlockName = OLD_NAME_TO_NEW_NAME.get(oldBlockName);
@@ -257,7 +257,7 @@ public class SchematicConversionMaps
     {
         try
         {
-            return JsonToNBT.parse(str.replace('\'', '"'));
+            return JsonToNBT.getTagFromJson(str.replace('\'', '"'));
         }
         catch (Exception e)
         {
@@ -267,10 +267,10 @@ public class SchematicConversionMaps
 
     public static String updateBlockName(String oldName)
     {
-        StringNBT tagStr = StringNBT.of(oldName);
+        StringNBT tagStr = StringNBT.valueOf(oldName);
 
         return Minecraft.getInstance().getDataFixer().update(TypeReferences.BLOCK_NAME, new Dynamic<>(NBTDynamicOps.INSTANCE, tagStr),
-                        1139, LitematicaSchematic.MINECRAFT_DATA_VERSION).getValue().asString();
+                        1139, LitematicaSchematic.MINECRAFT_DATA_VERSION).getValue().getString();
     }
 
     private static class ConversionData

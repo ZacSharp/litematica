@@ -75,7 +75,7 @@ public abstract class TaskCountBlocksBase extends TaskProcessChunkBase
                 {
                     for (int x = startX; x <= endX; ++x)
                     {
-                        posMutable.set(x, y, z);
+                        posMutable.setPos(x, y, z);
                         this.countAtPosition(posMutable);
                     }
                 }

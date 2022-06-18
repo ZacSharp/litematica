@@ -54,7 +54,7 @@ public class ChunkCacheSchematic implements IBlockDisplayReader
             {
                 Chunk chunk = this.chunkArray[cx - this.chunkStartX][cz - this.chunkStartZ];
 
-                if (chunk != null && chunk.areSectionsEmptyBetween(pos.getY(), pos.getY() + 15) == false)
+                if (chunk != null && chunk.isEmptyBetween(pos.getY(), pos.getY() + 15) == false)
                 {
                     this.empty = false;
                     break;
@@ -93,7 +93,7 @@ public class ChunkCacheSchematic implements IBlockDisplayReader
 
     @Override
     @Nullable
-    public TileEntity getBlockEntity(BlockPos pos)
+    public TileEntity getTileEntity(BlockPos pos)
     {
         return this.getTileEntity(pos, Chunk.CreateEntityType.CHECK);
     }
@@ -104,11 +104,11 @@ public class ChunkCacheSchematic implements IBlockDisplayReader
         int i = (pos.getX() >> 4) - this.chunkStartX;
         int j = (pos.getZ() >> 4) - this.chunkStartZ;
 
-        return this.chunkArray[i][j].getBlockEntity(pos, type);
+        return this.chunkArray[i][j].getTileEntity(pos, type);
     }
 
     @Override
-    public int getLightLevel(LightType var1, BlockPos var2)
+    public int getLightFor(LightType var1, BlockPos var2)
     {
         return 15;
     }
@@ -121,20 +121,20 @@ public class ChunkCacheSchematic implements IBlockDisplayReader
     }
 
     @Override
-    public WorldLightManager getLightingProvider()
+    public WorldLightManager getLightManager()
     {
         return this.lightingProvider;
     }
 
     @Override
-    public int getColor(BlockPos pos, ColorResolver colorResolver)
+    public int getBlockColor(BlockPos pos, ColorResolver colorResolver)
     {
         return colorResolver.getColor(this.worldClient.getBiome(pos), (double)pos.getX(), (double)pos.getZ());
     }
 
     @Override
-    public float getBrightness(Direction direction, boolean bl)
+    public float func_230487_a_(Direction direction, boolean bl) // getBrightness
     {
-        return this.worldClient.getBrightness(direction, bl); // AO brightness on face
+        return this.worldClient.func_230487_a_(direction, bl); // AO brightness on face
     }
 }

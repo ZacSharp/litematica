@@ -15,9 +15,9 @@ public abstract class MixinWorldChunk
                 slice = @Slice(from = @At(value = "INVOKE",
                                 target = "Lnet/minecraft/world/chunk/ChunkSection;getBlockState(III)" +
                                           "Lnet/minecraft/block/BlockState;")),
-                at = @At(value = "FIELD", target = "Lnet/minecraft/world/World;isClient:Z", ordinal = 0))
+                at = @At(value = "FIELD", target = "Lnet/minecraft/world/World;isRemote:Z", ordinal = 0))
     private boolean litematica_redirectIsRemote(World world)
     {
-        return WorldUtils.shouldPreventBlockUpdates(world) || world.isClient;
+        return WorldUtils.shouldPreventBlockUpdates(world) || world.isRemote;
     }
 }

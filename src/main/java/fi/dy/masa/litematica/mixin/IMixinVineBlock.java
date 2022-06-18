@@ -10,6 +10,6 @@ import net.minecraft.world.IBlockReader;
 @Mixin(VineBlock.class)
 public interface IMixinVineBlock
 {
-    @Invoker("shouldHaveSide")
+    @Invoker("hasAttachment")
     boolean invokeShouldConnectUp(IBlockReader blockReader, BlockPos pos, Direction side);
 }

@@ -40,11 +40,11 @@ public class TaskFillArea extends TaskProcessChunkBase
         this.replaceState = replaceState;
         this.removeEntities = removeEntities;
 
-        String blockString = BlockStateParser.stringifyBlockState(fillState);
+        String blockString = BlockStateParser.toString(fillState);
 
         if (replaceState != null)
         {
-            blockString += " replace " + BlockStateParser.stringifyBlockState(replaceState);
+            blockString += " replace " + BlockStateParser.toString(replaceState);
         }
 
         this.blockString = blockString;
@@ -95,7 +95,7 @@ public class TaskFillArea extends TaskProcessChunkBase
         if (removeEntities)
         {
             net.minecraft.util.math.AxisAlignedBB aabb = new net.minecraft.util.math.AxisAlignedBB(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
-            List<Entity> entities = this.world.getOtherEntities(this.mc.player, aabb, EntityUtils.NOT_PLAYER);
+            List<Entity> entities = this.world.getEntitiesInAABBexcluding(this.mc.player, aabb, EntityUtils.NOT_PLAYER);
 
             for (Entity entity : entities)
             {
@@ -117,12 +117,12 @@ public class TaskFillArea extends TaskProcessChunkBase
             {
                 for (int y = box.maxY; y >= box.minY; --y)
                 {
-                    posMutable.set(x, y, z);
+                    posMutable.setPos(x, y, z);
                     BlockState oldState = this.world.getBlockState(posMutable);
 
                     if ((this.replaceState == null && oldState != this.fillState) || oldState == this.replaceState)
                     {
-                        TileEntity te = this.world.getBlockEntity(posMutable);
+                        TileEntity te = this.world.getTileEntity(posMutable);
 
                         if (te instanceof IInventory)
                         {
@@ -145,7 +145,7 @@ public class TaskFillArea extends TaskProcessChunkBase
         {
             net.minecraft.util.math.AxisAlignedBB aabb = new net.minecraft.util.math.AxisAlignedBB(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
 
-            if (this.world.getOtherEntities(this.mc.player, aabb, EntityUtils.NOT_PLAYER).size() > 0)
+            if (this.world.getEntitiesInAABBexcluding(this.mc.player, aabb, EntityUtils.NOT_PLAYER).size() > 0)
             {
                 String killCmd = String.format("/kill @e[type=!player,x=%d,y=%d,z=%d,dx=%d,dy=%d,dz=%d]",
                         box.minX               , box.minY               , box.minZ,

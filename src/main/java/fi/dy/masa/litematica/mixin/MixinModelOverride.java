@@ -14,7 +14,7 @@ import net.minecraft.item.ItemStack;
 @Mixin(ItemOverride.class)
 public abstract class MixinModelOverride
 {
-    @Redirect(method = "matches", at = @At(value = "INVOKE",
+    @Redirect(method = "matchesOverride", at = @At(value = "INVOKE",
               target = "Lnet/minecraft/item/IItemPropertyGetter;call(" +
                        "Lnet/minecraft/item/ItemStack;Lnet/minecraft/client/world/ClientWorld;" +
                        "Lnet/minecraft/entity/LivingEntity;)F"))

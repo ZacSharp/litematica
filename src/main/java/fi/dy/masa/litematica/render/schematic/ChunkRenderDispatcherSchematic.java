@@ -114,14 +114,14 @@ public class ChunkRenderDispatcherSchematic
     @Nullable
     protected ChunkRendererSchematicVbo getChunkRenderer(BlockPos pos)
     {
-        int cx = MathHelper.floorDiv(pos.getX(), 16);
-        int cy = MathHelper.floorDiv(pos.getY(), 16);
-        int cz = MathHelper.floorDiv(pos.getZ(), 16);
+        int cx = MathHelper.intFloorDiv(pos.getX(), 16);
+        int cy = MathHelper.intFloorDiv(pos.getY(), 16);
+        int cz = MathHelper.intFloorDiv(pos.getZ(), 16);
 
         if (cy >= 0 && cy < this.sizeY)
         {
-            cx = MathHelper.floorMod(cx, this.sizeX);
-            cz = MathHelper.floorMod(cz, this.sizeZ);
+            cx = MathHelper.normalizeAngle(cx, this.sizeX);
+            cz = MathHelper.normalizeAngle(cz, this.sizeZ);
 
             return this.renderers[this.getChunkIndex(cx, cy, cz)];
         }

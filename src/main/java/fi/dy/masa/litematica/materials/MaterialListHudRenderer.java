@@ -95,7 +95,7 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
             return 0;
         }
 
-        FontRenderer font = mc.textRenderer;
+        FontRenderer font = mc.fontRenderer;
         final double scale = Configs.InfoOverlays.MATERIAL_LIST_HUD_SCALE.getDoubleValue();
         final int maxLines = Configs.InfoOverlays.MATERIAL_LIST_HUD_MAX_LINES.getIntegerValue();
         int bgMargin = 2;
@@ -120,12 +120,12 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
         for (int i = 0; i < size; ++i)
         {
             MaterialListEntry entry = list.get(i);
-            maxTextLength = Math.max(maxTextLength, font.getWidth(entry.getStack().getName().getString()));
+            maxTextLength = Math.max(maxTextLength, font.getStringWidth(entry.getStack().getDisplayName().getString()));
             int multiplier = this.materialList.getMultiplier();
             int count = multiplier == 1 ? entry.getCountMissing() - entry.getCountAvailable() : entry.getCountTotal();
             count *= multiplier;
-            String strCount = GuiBase.TXT_RED + this.getFormattedCountString(count, entry.getStack().getMaxCount()) + GuiBase.TXT_RST;
-            maxCountLength = Math.max(maxCountLength, font.getWidth(strCount));
+            String strCount = GuiBase.TXT_RED + this.getFormattedCountString(count, entry.getStack().getMaxStackSize()) + GuiBase.TXT_RST;
+            maxCountLength = Math.max(maxCountLength, font.getStringWidth(strCount));
         }
 
         final int maxLineLength = maxTextLength + maxCountLength + 30;
@@ -166,11 +166,11 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         if (useShadow)
         {
-            font.drawWithShadow(matrixStack, title, posX + 2, posY + 2, textColor);
+            font.drawStringWithShadow(matrixStack, title, posX + 2, posY + 2, textColor);
         }
         else
         {
-            font.draw(matrixStack, title, posX + 2, posY + 2, textColor);
+            font.drawString(matrixStack, title, posX + 2, posY + 2, textColor);
         }
 
         posY += 12;
@@ -181,23 +181,23 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
         for (int i = 0; i < size; ++i)
         {
             MaterialListEntry entry = list.get(i);
-            String text = entry.getStack().getName().getString();
+            String text = entry.getStack().getDisplayName().getString();
             int multiplier = this.materialList.getMultiplier();
             int count = multiplier == 1 ? entry.getCountMissing() - entry.getCountAvailable() : entry.getCountTotal();
             count *= multiplier;
-            String strCount = this.getFormattedCountString(count, entry.getStack().getMaxCount());
-            int cntLen = font.getWidth(strCount);
+            String strCount = this.getFormattedCountString(count, entry.getStack().getMaxStackSize());
+            int cntLen = font.getStringWidth(strCount);
             int cntPosX = posX + maxLineLength - cntLen - 2;
 
             if (useShadow)
             {
-                font.drawWithShadow(matrixStack, text, x, y, textColor);
-                font.drawWithShadow(matrixStack, strCount, cntPosX, y, itemCountTextColor);
+                font.drawStringWithShadow(matrixStack, text, x, y, textColor);
+                font.drawStringWithShadow(matrixStack, strCount, cntPosX, y, itemCountTextColor);
             }
             else
             {
-                font.draw(matrixStack, text, x, y, textColor);
-                font.draw(matrixStack, strCount, cntPosX, y, itemCountTextColor);
+                font.drawString(matrixStack, text, x, y, textColor);
+                font.drawString(matrixStack, strCount, cntPosX, y, itemCountTextColor);
             }
 
             y += lineHeight;
@@ -212,7 +212,7 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         for (int i = 0; i < size; ++i)
         {
-            mc.getItemRenderer().renderInGui(list.get(i).getStack(), x, y);
+            mc.getItemRenderer().renderItemAndEffectIntoGuiWithoutEntity(list.get(i).getStack(), x, y);
             y += lineHeight;
         }
 
@@ -263,7 +263,7 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
             if (traceWrapper != null && traceWrapper.getHitType() == RayTraceUtils.RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
             {
-                BlockPos pos = traceWrapper.getBlockHitResult().getBlockPos();
+                BlockPos pos = traceWrapper.getBlockHitResult().getPos();
                 BlockState state = SchematicWorldHandler.getSchematicWorld().getBlockState(pos);
 
                 if (state != lastLookedAtBlock)
@@ -280,7 +280,7 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
     public static void highlightSlotsWithItem(ItemStack referenceItem, ContainerScreen<?> gui, Color4f color, Minecraft mc)
     {
-        List<Slot> slots = gui.getScreenHandler().slots;
+        List<Slot> slots = gui.getContainer().inventorySlots;
 
         RenderSystem.disableTexture();
         RenderUtils.setupBlend();
@@ -289,11 +289,11 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         for (Slot slot : slots)
         {
-            if (slot.hasStack() &&
+            if (slot.getHasStack() &&
                 (fi.dy.masa.malilib.util.InventoryUtils.areStacksEqual(slot.getStack(), referenceItem) ||
                  InventoryUtils.doesShulkerBoxContainItem(slot.getStack(), referenceItem)))
             {
-                renderOutlinedBox(guiX + slot.x, guiY + slot.y, 16, 16, color.intValue, color.intValue | 0xFF000000, 1f);
+                renderOutlinedBox(guiX + slot.xPos, guiY + slot.yPos, 16, 16, color.intValue, color.intValue | 0xFF000000, 1f);
             }
         }
 

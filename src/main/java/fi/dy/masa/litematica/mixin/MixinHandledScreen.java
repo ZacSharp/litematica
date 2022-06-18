@@ -19,9 +19,9 @@ public abstract class MixinHandledScreen extends Screen
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER,
-            target = "Lnet/minecraft/client/gui/screen/inventory/ContainerScreen;drawBackground(Lcom/mojang/blaze3d/matrix/MatrixStack;FII)V"))
+            target = "Lnet/minecraft/client/gui/screen/inventory/ContainerScreen;drawGuiContainerBackgroundLayer(Lcom/mojang/blaze3d/matrix/MatrixStack;FII)V"))
     private void renderSlotHighlights(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo ci)
     {
-        MaterialListHudRenderer.renderLookedAtBlockInInventory((ContainerScreen<?>) (Object) this, this.client);
+        MaterialListHudRenderer.renderLookedAtBlockInInventory((ContainerScreen<?>) (Object) this, this.minecraft);
     }
 }

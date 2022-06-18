@@ -48,7 +48,7 @@ public class SchematicaSchematic
     private LitematicaBlockStateContainer blocks;
     private Map<BlockPos, CompoundNBT> tiles = new HashMap<>();
     private List<CompoundNBT> entities = new ArrayList<>();
-    private Vector3i size = Vector3i.ZERO;
+    private Vector3i size = Vector3i.NULL_VECTOR;
     private String fileName;
     private IdentityHashMap<BlockState, IStateFixer> postProcessingFilter;
     private boolean needsConversionPostProcessing;
@@ -110,14 +110,14 @@ public class SchematicaSchematic
                         BlockPos pos = new BlockPos(x, y, z);
                         CompoundNBT teNBT = this.tiles.get(pos);
 
-                        pos = Template.transform(placement, pos).add(posStart);
+                        pos = Template.transformedBlockPos(placement, pos).add(posStart);
 
                         state = state.mirror(mirror);
                         state = state.rotate(rotation);
 
                         if (teNBT != null)
                         {
-                            TileEntity te = world.getBlockEntity(pos);
+                            TileEntity te = world.getTileEntity(pos);
 
                             if (te != null)
                             {
@@ -132,7 +132,7 @@ public class SchematicaSchematic
 
                         if (world.setBlockState(pos, state, setBlockStateFlags) && teNBT != null)
                         {
-                            TileEntity te = world.getBlockEntity(pos);
+                            TileEntity te = world.getTileEntity(pos);
 
                             if (te != null)
                             {
@@ -142,9 +142,9 @@ public class SchematicaSchematic
 
                                 try
                                 {
-                                    te.fromTag(state, teNBT);
-                                    te.applyMirror(mirror);
-                                    te.applyRotation(rotation);
+                                    te.read(state, teNBT);
+                                    te.mirror(mirror);
+                                    te.rotate(rotation);
                                 }
                                 catch (Exception e)
                                 {
@@ -168,12 +168,12 @@ public class SchematicaSchematic
                             BlockPos pos = new BlockPos(x, y, z);
                             CompoundNBT teNBT = this.tiles.get(pos);
 
-                            pos = Template.transform(placement, pos).add(posStart);
-                            world.updateNeighbors(pos, world.getBlockState(pos).getBlock());
+                            pos = Template.transformedBlockPos(placement, pos).add(posStart);
+                            world.updateBlock(pos, world.getBlockState(pos).getBlock());
 
                             if (teNBT != null)
                             {
-                                TileEntity te = world.getBlockEntity(pos);
+                                TileEntity te = world.getTileEntity(pos);
 
                                 if (te != null)
                                 {
@@ -185,7 +185,7 @@ public class SchematicaSchematic
                 }
             }
 
-            if (placement.shouldIgnoreEntities() == false)
+            if (placement.getIgnoreEntities() == false)
             {
                 this.addEntitiesToWorld(world, posStart, placement);
             }
@@ -237,7 +237,7 @@ public class SchematicaSchematic
                             {
                                 BlockState state = this.blocks.get(xSrc, ySrc, zSrc);
 
-                                posMutable.set(xSrc, ySrc, zSrc);
+                                posMutable.setPos(xSrc, ySrc, zSrc);
                                 CompoundNBT teNBT = this.tiles.get(posMutable);
 
                                 // TODO The rotations need to be transformed back to get the correct source position in the schematic...
@@ -252,7 +252,7 @@ public class SchematicaSchematic
 
                                 if (teNBT != null)
                                 {
-                                    TileEntity te = chunk.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
+                                    TileEntity te = chunk.getTileEntity(pos, Chunk.CreateEntityType.CHECK);
 
                                     if (te != null)
                                     {
@@ -269,7 +269,7 @@ public class SchematicaSchematic
 
                                 if (teNBT != null)
                                 {
-                                    TileEntity te = chunk.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
+                                    TileEntity te = chunk.getTileEntity(pos, Chunk.CreateEntityType.CHECK);
 
                                     if (te != null)
                                     {
@@ -279,9 +279,9 @@ public class SchematicaSchematic
 
                                         try
                                         {
-                                            te.fromTag(state, teNBT);
-                                            te.applyMirror(mirror);
-                                            te.applyRotation(rotation);
+                                            te.read(state, teNBT);
+                                            te.mirror(mirror);
+                                            te.rotate(rotation);
                                         }
                                         catch (Exception e)
                                         {
@@ -295,7 +295,7 @@ public class SchematicaSchematic
                 }
             }
 
-            if (placement.shouldIgnoreEntities() == false)
+            if (placement.getIgnoreEntities() == false)
             {
                 this.addEntitiesToWorld(world, posStart, placement);
             }
@@ -316,9 +316,9 @@ public class SchematicaSchematic
 
             if (entity != null)
             {
-                float rotationYaw = entity.applyMirror(mirror);
-                rotationYaw = rotationYaw + (entity.yaw - entity.applyRotation(rotation));
-                entity.refreshPositionAndAngles(realPos.x, realPos.y, realPos.z, rotationYaw, entity.pitch);
+                float rotationYaw = entity.getMirroredYaw(mirror);
+                rotationYaw = rotationYaw + (entity.rotationYaw - entity.getRotatedYaw(rotation));
+                entity.setLocationAndAngles(realPos.x, realPos.y, realPos.z, rotationYaw, entity.rotationPitch);
                 EntityUtils.spawnEntityAndPassengersInWorld(entity, world);
             }
         }
@@ -336,7 +336,7 @@ public class SchematicaSchematic
                 StructureMode.valueOf(tag.getString("mode")) == StructureMode.DATA)
             {
                 BlockPos pos = entry.getKey();
-                pos = Template.transform(placement, pos).add(posStart);
+                pos = Template.transformedBlockPos(placement, pos).add(posStart);
                 map.put(pos, tag.getString("metadata"));
             }
         }
@@ -368,17 +368,17 @@ public class SchematicaSchematic
                     int relY = y - startY;
                     int relZ = z - startZ;
 
-                    posMutable.set(x, y, z);
+                    posMutable.setPos(x, y, z);
                     BlockState state = world.getBlockState(posMutable);
                     this.blocks.set(relX, relY, relZ, state);
 
-                    TileEntity te = world.getBlockEntity(posMutable);
+                    TileEntity te = world.getTileEntity(posMutable);
 
                     if (te != null)
                     {
                         try
                         {
-                            CompoundNBT nbt = te.toTag(new CompoundNBT());
+                            CompoundNBT nbt = te.write(new CompoundNBT());
 
                             nbt.putInt("x", relX);
                             nbt.putInt("y", relY);
@@ -400,15 +400,15 @@ public class SchematicaSchematic
     private void readEntitiesFromWorld(World world, BlockPos posStart, BlockPos size)
     {
         this.entities.clear();
-        List<Entity> entities = world.getOtherEntities((Entity) null, new net.minecraft.util.math.AxisAlignedBB(posStart, posStart.add(size)));
+        List<Entity> entities = world.getEntitiesWithinAABBExcludingEntity((Entity) null, new net.minecraft.util.math.AxisAlignedBB(posStart, posStart.add(size)));
 
         for (Entity entity : entities)
         {
             CompoundNBT tag = new CompoundNBT();
 
-            if (entity.saveToTag(tag))
+            if (entity.writeUnlessPassenger(tag))
             {
-                Vector3d pos = new Vector3d(entity.getX() - posStart.getX(), entity.getY() - posStart.getY(), entity.getZ() - posStart.getZ());
+                Vector3d pos = new Vector3d(entity.getPosX() - posStart.getX(), entity.getPosY() - posStart.getY(), entity.getPosZ() - posStart.getZ());
                 NBTUtils.writeEntityPositionToTag(pos, tag);
 
                 this.entities.add(tag);
@@ -476,7 +476,7 @@ public class SchematicaSchematic
         if (nbt.contains("SchematicaMapping", Constants.NBT.TAG_COMPOUND))
         {
             CompoundNBT tag = nbt.getCompound("SchematicaMapping");
-            Set<String> keys = tag.getKeys();
+            Set<String> keys = tag.keySet();
 
             for (String key : keys)
             {
@@ -502,7 +502,7 @@ public class SchematicaSchematic
         else if (nbt.contains("BlockIDs", Constants.NBT.TAG_COMPOUND))
         {
             CompoundNBT tag = nbt.getCompound("BlockIDs");
-            Set<String> keys = tag.getKeys();
+            Set<String> keys = tag.keySet();
 
             for (String idStr : keys)
             {

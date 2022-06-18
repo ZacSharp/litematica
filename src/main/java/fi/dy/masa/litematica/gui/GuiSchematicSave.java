@@ -78,7 +78,7 @@ public class GuiSchematicSave extends GuiSchematicSaveBase implements ICompletio
     @Override
     public void onTaskCompleted()
     {
-        if (this.mc.isOnThread())
+        if (this.mc.isOnExecutionThread())
         {
             this.refreshList();
         }

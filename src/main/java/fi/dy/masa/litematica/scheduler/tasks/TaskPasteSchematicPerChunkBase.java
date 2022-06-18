@@ -162,7 +162,7 @@ public abstract class TaskPasteSchematicPerChunkBase extends TaskBase implements
 
     protected boolean canProcessChunk(ChunkPos pos, WorldSchematic worldSchematic, ClientWorld worldClient)
     {
-        if (worldSchematic.getChunkProvider().isChunkLoaded(pos.x, pos.z) == false ||
+        if (worldSchematic.getChunkProvider().chunkExists(pos.x, pos.z) == false ||
             DataManager.getSchematicPlacementManager().hasPendingRebuildFor(pos))
         {
             return false;
@@ -178,7 +178,7 @@ public abstract class TaskPasteSchematicPerChunkBase extends TaskBase implements
         {
             if (this.mc.player != null)
             {
-                this.comparator.setReferencePosition(this.mc.player.getBlockPos());
+                this.comparator.setReferencePosition(this.mc.player.getPosition());
                 this.chunks.sort(this.comparator);
             }
 

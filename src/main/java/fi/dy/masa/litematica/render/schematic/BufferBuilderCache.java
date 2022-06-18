@@ -13,9 +13,9 @@ public class BufferBuilderCache
 
     public BufferBuilderCache()
     {
-        for (RenderType layer : RenderType.getBlockLayers())
+        for (RenderType layer : RenderType.getBlockRenderTypes())
         {
-            this.blockBufferBuilders.put(layer, new BufferBuilder(layer.getExpectedBufferSize()));
+            this.blockBufferBuilders.put(layer, new BufferBuilder(layer.getBufferSize()));
         }
 
         this.overlayBufferBuilders = new BufferBuilder[OverlayRenderType.values().length];
@@ -38,11 +38,11 @@ public class BufferBuilderCache
 
     public void clear()
     {
-        this.blockBufferBuilders.values().forEach(BufferBuilder::clear);
+        this.blockBufferBuilders.values().forEach(BufferBuilder::reset);
 
         for (BufferBuilder buffer : this.overlayBufferBuilders)
         {
-            buffer.clear();
+            buffer.reset();
         }
     }
 }

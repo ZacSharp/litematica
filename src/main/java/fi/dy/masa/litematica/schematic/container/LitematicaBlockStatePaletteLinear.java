@@ -88,7 +88,7 @@ public class LitematicaBlockStatePaletteLinear implements ILitematicaBlockStateP
         for (int i = 0; i < size; ++i)
         {
             CompoundNBT tag = tagList.getCompound(i);
-            BlockState state = NBTUtil.toBlockState(tag);
+            BlockState state = NBTUtil.readBlockState(tag);
 
             if (i > 0 || state != LitematicaBlockStateContainer.AIR_BLOCK_STATE)
             {
@@ -111,7 +111,7 @@ public class LitematicaBlockStatePaletteLinear implements ILitematicaBlockStateP
                 state = LitematicaBlockStateContainer.AIR_BLOCK_STATE;
             }
 
-            CompoundNBT tag = NBTUtil.fromBlockState(state);
+            CompoundNBT tag = NBTUtil.writeBlockState(state);
             tagList.add(tag);
         }
 

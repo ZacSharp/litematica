@@ -51,10 +51,10 @@ public class SchematicConversionFixers
     private static final BooleanProperty[] HORIZONTAL_CONNECTING_BLOCK_PROPS = new BooleanProperty[] { null, null, FourWayBlock.NORTH, FourWayBlock.SOUTH, FourWayBlock.WEST, FourWayBlock.EAST };
     private static final BlockState REDSTONE_WIRE_DOT = Blocks.REDSTONE_WIRE.getDefaultState();
     private static final BlockState REDSTONE_WIRE_CROSS = Blocks.REDSTONE_WIRE.getDefaultState()
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_NORTH, RedstoneSide.field_21859) //RedstoneSide.SIDE
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_EAST, RedstoneSide.field_21859) //RedstoneSide.SIDE
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_SOUTH, RedstoneSide.field_21859) //RedstoneSide.SIDE
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_WEST, RedstoneSide.field_21859); //RedstoneSide.SIDE
+                          .with(RedstoneWireBlock.NORTH, RedstoneSide.SIDE)
+                          .with(RedstoneWireBlock.EAST, RedstoneSide.SIDE)
+                          .with(RedstoneWireBlock.SOUTH, RedstoneSide.SIDE)
+                          .with(RedstoneWireBlock.WEST, RedstoneSide.SIDE);
 
     public static final IStateFixer FIXER_BANNER = (reader, state, pos) -> {
         CompoundNBT tag = reader.getTileEntityData(pos);
@@ -105,7 +105,7 @@ public class SchematicConversionFixers
 
             if (colorOrig != colorFromData)
             {
-                Direction facing = state.get(WallBannerBlock.FACING);
+                Direction facing = state.get(WallBannerBlock.HORIZONTAL_FACING);
 
                 switch (colorFromData)
                 {
@@ -127,7 +127,7 @@ public class SchematicConversionFixers
                     case BLACK:         state = Blocks.BLACK_WALL_BANNER.getDefaultState();      break;
                 }
 
-                state = state.with(WallBannerBlock.FACING, facing);
+                state = state.with(WallBannerBlock.HORIZONTAL_FACING, facing);
             }
         }
 
@@ -140,7 +140,7 @@ public class SchematicConversionFixers
         if (tag != null && tag.contains("color", Constants.NBT.TAG_INT))
         {
             int colorId = tag.getInt("color");
-            Direction facing = state.get(BedBlock.FACING);
+            Direction facing = state.get(BedBlock.HORIZONTAL_FACING);
             BedPart part = state.get(BedBlock.PART);
             Boolean occupied = state.get(BedBlock.OCCUPIED);
 
@@ -165,7 +165,7 @@ public class SchematicConversionFixers
                 default: return state;
             }
 
-            state = state.with(BedBlock.FACING, facing)
+            state = state.with(BedBlock.HORIZONTAL_FACING, facing)
                          .with(BedBlock.PART, part)
                          .with(BedBlock.OCCUPIED, occupied);
         }
@@ -174,7 +174,7 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_CHRORUS_PLANT = (reader, state, pos) -> {
-        return ((ChorusPlantBlock) state.getBlock()).withConnectionProperties(reader, pos);
+        return ((ChorusPlantBlock) state.getBlock()).makeConnections(reader, pos);
     };
 
     public static final IStateFixer FIXER_DIRT_SNOWY = (reader, state, pos) -> {
@@ -229,8 +229,8 @@ public class SchematicConversionFixers
             BlockPos posAdj = pos.offset(side);
             BlockState stateAdj = reader.getBlockState(posAdj);
             Direction sideOpposite = side.getOpposite();
-            boolean flag = stateAdj.isSideSolidFullSquare(reader, posAdj, sideOpposite);
-            state = state.with(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.getId()], fence.canConnect(stateAdj, flag, sideOpposite));
+            boolean flag = stateAdj.isSolidSide(reader, posAdj, sideOpposite);
+            state = state.with(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.getIndex()], fence.canConnect(stateAdj, flag, sideOpposite));
         }
 
         return state;
@@ -238,7 +238,7 @@ public class SchematicConversionFixers
 
     public static final IStateFixer FIXER_FENCE_GATE = (reader, state, pos) -> {
         FenceGateBlock gate = (FenceGateBlock) state.getBlock();
-        Direction facing = state.get(FenceGateBlock.FACING);
+        Direction facing = state.get(FenceGateBlock.HORIZONTAL_FACING);
         boolean inWall = false;
 
         if (facing.getAxis() == Direction.Axis.X)
@@ -256,7 +256,7 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_FIRE = (reader, state, pos) -> {
-        return AbstractFireBlock.getState(reader, pos);
+        return AbstractFireBlock.getFireForPlacement(reader, pos);
     };
 
     public static final IStateFixer FIXER_FLOWER_POT = (reader, state, pos) -> {
@@ -316,7 +316,7 @@ public class SchematicConversionFixers
             state = state
                         .with(NoteBlock.POWERED, Boolean.valueOf(tag.getBoolean("powered")))
                         .with(NoteBlock.NOTE, Integer.valueOf(MathHelper.clamp(tag.getByte("note"), 0, 24)))
-                        .with(NoteBlock.INSTRUMENT, NoteBlockInstrument.fromBlockState(reader.getBlockState(pos.down())));
+                        .with(NoteBlock.INSTRUMENT, NoteBlockInstrument.byState(reader.getBlockState(pos.down())));
         }
 
         return state;
@@ -330,8 +330,8 @@ public class SchematicConversionFixers
             BlockPos posAdj = pos.offset(side);
             BlockState stateAdj = reader.getBlockState(posAdj);
             Direction sideOpposite = side.getOpposite();
-            boolean flag = stateAdj.isSideSolidFullSquare(reader, posAdj, sideOpposite);
-            state = state.with(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.getId()], pane.connectsTo(stateAdj, flag));
+            boolean flag = stateAdj.isSolidSide(reader, posAdj, sideOpposite);
+            state = state.with(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.getIndex()], pane.canAttachTo(stateAdj, flag));
         }
 
         return state;
@@ -456,7 +456,7 @@ public class SchematicConversionFixers
 
     public static final IStateFixer FIXER_STEM = (reader, state, pos) -> {
         StemBlock stem = (StemBlock) state.getBlock();
-        StemGrownBlock crop = stem.getGourdBlock();
+        StemGrownBlock crop = stem.getCrop();
 
         for (Direction side : fi.dy.masa.malilib.util.PositionUtils.HORIZONTAL_DIRECTIONS)
         {
@@ -490,9 +490,9 @@ public class SchematicConversionFixers
 
     private static boolean getIsRepeaterPoweredOnSide(IBlockReader reader, BlockPos pos, BlockState stateRepeater)
     {
-        Direction facing = stateRepeater.get(RepeaterBlock.FACING);
-        Direction sideLeft = facing.rotateYCounterclockwise();
-        Direction sideRight = facing.rotateYClockwise();
+        Direction facing = stateRepeater.get(RepeaterBlock.HORIZONTAL_FACING);
+        Direction sideLeft = facing.rotateYCCW();
+        Direction sideRight = facing.rotateY();
 
         return getRepeaterPowerOnSide(reader, pos.offset(sideLeft) , sideLeft ) > 0 ||
                getRepeaterPowerOnSide(reader, pos.offset(sideRight), sideRight) > 0;
@@ -503,7 +503,7 @@ public class SchematicConversionFixers
         BlockState state = reader.getBlockState(pos);
         Block block = state.getBlock();
 
-        if (RedstoneDiodeBlock.isRedstoneGate(state))
+        if (RedstoneDiodeBlock.isDiode(state))
         {
             if (block == Blocks.REDSTONE_BLOCK)
             {
@@ -511,7 +511,7 @@ public class SchematicConversionFixers
             }
             else
             {
-                return block == Blocks.REDSTONE_WIRE ? state.get(RedstoneWireBlock.POWER) : state.getStrongRedstonePower(reader, pos, side);
+                return block == Blocks.REDSTONE_WIRE ? state.get(RedstoneWireBlock.POWER) : state.getStrongPower(reader, pos, side);
             }
         }
         else

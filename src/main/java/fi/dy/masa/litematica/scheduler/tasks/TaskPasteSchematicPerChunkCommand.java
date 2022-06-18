@@ -155,7 +155,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
                                  ClientPlayerEntity player)
     {
         BlockPos.Mutable posMutable = new BlockPos.Mutable();
-        Chunk chunkSchematic = worldSchematic.getChunkProvider().getChunk(pos.x, pos.z);
+        Chunk chunkSchematic = worldSchematic.getChunkProvider().getChunkForLight(pos.x, pos.z);
         Chunk chunkClient = worldClient.getChunk(pos.x, pos.z);
         PasteNbtBehavior nbtBehavior = (PasteNbtBehavior) Configs.Generic.PASTE_NBT_BEHAVIOR.getOptionListValue();
 
@@ -171,7 +171,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
         while (this.currentIndex < this.boxVolume)
         {
-            posMutable.set(this.currentX, this.currentY, this.currentZ);
+            posMutable.setPos(this.currentX, this.currentY, this.currentZ);
 
             if (++this.currentY > box.maxY)
             {
@@ -199,7 +199,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
                         continue;
                     }
 
-                    TileEntity be = worldSchematic.getBlockEntity(posMutable);
+                    TileEntity be = worldSchematic.getTileEntity(posMutable);
 
                     if (be != null && nbtBehavior != PasteNbtBehavior.NONE)
                     {
@@ -247,7 +247,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     protected void summonEntities(IntBoundingBox box, WorldSchematic worldSchematic, ClientPlayerEntity player)
     {
         net.minecraft.util.math.AxisAlignedBB bb = new net.minecraft.util.math.AxisAlignedBB(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
-        List<Entity> entities = worldSchematic.getOtherEntities((Entity) null, bb, null);
+        List<Entity> entities = worldSchematic.getEntitiesInAABBexcluding((Entity) null, bb, null);
 
         for (Entity entity : entities)
         {
@@ -261,7 +261,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
                 String nbtString = nbt.toString();
                 */
 
-                String strCommand = String.format(Locale.ROOT, "summon %s %f %f %f", id, entity.getX(), entity.getY(), entity.getZ());
+                String strCommand = String.format(Locale.ROOT, "summon %s %f %f %f", id, entity.getPosX(), entity.getPosY(), entity.getPosZ());
                 /*
                 String strCommand = String.format("/summon %s %f %f %f %s", entityName, entity.posX, entity.posY, entity.posZ, nbtString);
                 System.out.printf("entity: %s\n", entity);
@@ -277,7 +277,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     protected void sendSetBlockCommand(int x, int y, int z, BlockState state, ClientPlayerEntity player)
     {
         String cmdName = Configs.Generic.PASTE_COMMAND_SETBLOCK.getStringValue();
-        String blockString = BlockStateParser.stringifyBlockState(state);
+        String blockString = BlockStateParser.toString(state);
         String strCommand = String.format("%s %d %d %d %s", cmdName, x, y, z, blockString);
 
         this.sendCommand(strCommand, player);
@@ -287,19 +287,19 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     protected void setDataViaDataModify(BlockPos pos, BlockState state, TileEntity be,
                                         World schematicWorld, ClientWorld clientWorld, ClientPlayerEntity player)
     {
-        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.getBlockPos(), 3);
+        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.getPosition(), 3);
 
         if (placementPos != null && this.preparePickedStack(pos, state, be, schematicWorld, player))
         {
             Vector3d posVec = new Vector3d(placementPos.getX() + 0.5, placementPos.getY() + 1.0, placementPos.getZ() + 0.5);
             BlockRayTraceResult hitResult = new BlockRayTraceResult(posVec, Direction.UP, placementPos, false);
-            this.mc.interactionManager.interactBlock(player, clientWorld, Hand.OFF_HAND, hitResult);
+            this.mc.playerController.func_217292_a(player, clientWorld, Hand.OFF_HAND, hitResult);
 
             Set<String> keys = new HashSet<>();
 
             try
             {
-                keys.addAll(be.toTag(new CompoundNBT()).getKeys());
+                keys.addAll(be.write(new CompoundNBT()).keySet());
             } catch (Exception ignore) {}
 
             keys.remove("id");
@@ -326,13 +326,13 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     protected void placeBlockViaClone(BlockPos pos, BlockState state, TileEntity be,
                                       World schematicWorld, ClientWorld clientWorld, ClientPlayerEntity player)
     {
-        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.getBlockPos(), 3);
+        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.getPosition(), 3);
 
         if (placementPos != null && this.preparePickedStack(pos, state, be, schematicWorld, player))
         {
             Vector3d posVec = new Vector3d(placementPos.getX() + 0.5, placementPos.getY() + 1.0, placementPos.getZ() + 0.5);
             BlockRayTraceResult hitResult = new BlockRayTraceResult(posVec, Direction.UP, placementPos, false);
-            this.mc.interactionManager.interactBlock(player, clientWorld, Hand.OFF_HAND, hitResult);
+            this.mc.playerController.func_217292_a(player, clientWorld, Hand.OFF_HAND, hitResult);
 
             {
                 String command = String.format("data get block %d %d %d", placementPos.getX(), placementPos.getY(), placementPos.getZ());
@@ -356,14 +356,14 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     {
         if (this.preparePickedStack(pos, state, be, schematicWorld, player))
         {
-            player.setPos(pos.getX(), pos.getY() + 2, pos.getZ());
+            player.setRawPosition(pos.getX(), pos.getY() + 2, pos.getZ());
 
             String command = String.format("tp @p %d %d %d", pos.getX(), pos.getY() + 2, pos.getZ());
             this.sendCommand(command, player);
 
             Vector3d posVec = new Vector3d(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
             BlockRayTraceResult hitResult = new BlockRayTraceResult(posVec, Direction.UP, pos, false);
-            this.mc.interactionManager.interactBlock(player, clientWorld, Hand.OFF_HAND, hitResult);
+            this.mc.playerController.func_217292_a(player, clientWorld, Hand.OFF_HAND, hitResult);
         }
     }
 
@@ -398,7 +398,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
             {
                 for (int x = centerPos.getX() - radius; x <= centerPos.getX() + radius; ++x)
                 {
-                    pos.set(x, y, z);
+                    pos.setPos(x, y, z);
 
                     if (isPositionAndSidesEmpty(world, pos, sidePos))
                     {
@@ -413,14 +413,14 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
     public static boolean isPositionAndSidesEmpty(World world, BlockPos.Mutable centerPos, BlockPos.Mutable pos)
     {
-        if (world.isAir(centerPos) == false)
+        if (world.isAirBlock(centerPos) == false)
         {
             return false;
         }
 
         for (Direction side : PositionUtils.ALL_DIRECTIONS)
         {
-            if (world.isAir(pos.set(centerPos, side)) == false)
+            if (world.isAirBlock(pos.setAndMove(centerPos, side)) == false)
             {
                 return false;
             }
@@ -431,13 +431,13 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
     protected boolean preparePickedStack(BlockPos pos, BlockState state, TileEntity be, World world, ClientPlayerEntity player)
     {
-        ItemStack stack = state.getBlock().getPickStack(world, pos, state);
+        ItemStack stack = state.getBlock().getItem(world, pos, state);
 
         if (stack.isEmpty() == false)
         {
             addBlockEntityNbt(stack, be);
-            player.inventory.offHand.set(0, stack);
-            this.mc.interactionManager.clickCreativeStack(stack, 45);
+            player.inventory.offHandInventory.set(0, stack);
+            this.mc.playerController.sendSlotPacket(stack, 45);
             return true;
         }
 
@@ -446,7 +446,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
     public static void addBlockEntityNbt(ItemStack stack, TileEntity be)
     {
-        CompoundNBT tag = be.toTag(new CompoundNBT());
+        CompoundNBT tag = be.write(new CompoundNBT());
 
         if (stack.getItem() instanceof SkullItem && tag.contains("SkullOwner"))
         {
@@ -455,7 +455,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         }
         else
         {
-            stack.putSubTag("BlockEntityTag", tag);
+            stack.setTagInfo("BlockEntityTag", tag);
         }
     }
 

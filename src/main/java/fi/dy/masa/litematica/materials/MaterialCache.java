@@ -107,7 +107,7 @@ public class MaterialCache
         if (stack == null)
         {
             world.setBlockState(pos, state, 0x14);
-            stack = state.getBlock().getPickStack(world, pos, state);
+            stack = state.getBlock().getItem(world, pos, state);
         }
 
         if (stack == null || stack.isEmpty())
@@ -156,7 +156,7 @@ public class MaterialCache
 
         if (block instanceof FlowerPotBlock && block != Blocks.FLOWER_POT)
         {
-            return ImmutableList.of(new ItemStack(Blocks.FLOWER_POT), block.getPickStack(world, pos, state));
+            return ImmutableList.of(new ItemStack(Blocks.FLOWER_POT), block.getItem(world, pos, state));
         }
 
         return ImmutableList.of(this.getRequiredBuildItemForState(state, world, pos));
@@ -254,10 +254,10 @@ public class MaterialCache
         for (Map.Entry<BlockState, ItemStack> entry : map.entrySet())
         {
             CompoundNBT tag = new CompoundNBT();
-            CompoundNBT stateTag = NBTUtil.fromBlockState(entry.getKey());
+            CompoundNBT stateTag = NBTUtil.writeBlockState(entry.getKey());
 
             tag.put("Block", stateTag);
-            tag.put("Item", entry.getValue().toTag(new CompoundNBT()));
+            tag.put("Item", entry.getValue().write(new CompoundNBT()));
 
             list.add(tag);
         }
@@ -288,11 +288,11 @@ public class MaterialCache
                 if (tag.contains("Block", Constants.NBT.TAG_COMPOUND) &&
                     tag.contains("Item", Constants.NBT.TAG_COMPOUND))
                 {
-                    BlockState state = NBTUtil.toBlockState(tag.getCompound("Block"));
+                    BlockState state = NBTUtil.readBlockState(tag.getCompound("Block"));
 
                     if (state != null)
                     {
-                        ItemStack stack = ItemStack.fromTag(tag.getCompound("Item"));
+                        ItemStack stack = ItemStack.read(tag.getCompound("Item"));
                         this.buildItemsForStates.put(state, stack);
                     }
                 }

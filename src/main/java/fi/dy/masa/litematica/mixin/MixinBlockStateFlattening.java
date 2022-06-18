@@ -10,7 +10,7 @@ import fi.dy.masa.litematica.schematic.conversion.SchematicConversionMaps;
 @Mixin(BlockStateFlatteningMap.class)
 public abstract class MixinBlockStateFlattening
 {
-    @Inject(method = "putStates", at = @At("HEAD"))
+    @Inject(method = "addEntry", at = @At("HEAD"))
     private static void onAddEntry(int id, String fixedNBT, String[] sourceNBTs, CallbackInfo ci)
     {
         SchematicConversionMaps.addEntry(id, fixedNBT, sourceNBTs);

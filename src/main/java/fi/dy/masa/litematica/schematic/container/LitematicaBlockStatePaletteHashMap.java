@@ -24,7 +24,7 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
     @Override
     public int idFor(BlockState state)
     {
-        int i = this.statePaletteMap.getRawId(state);
+        int i = this.statePaletteMap.getId(state);
 
         if (i == -1)
         {
@@ -43,7 +43,7 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
     @Nullable
     public BlockState getBlockState(int indexKey)
     {
-        return this.statePaletteMap.get(indexKey);
+        return this.statePaletteMap.getByValue(indexKey);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
         for (int i = 0; i < size; ++i)
         {
             CompoundNBT tag = tagList.getCompound(i);
-            BlockState state = NBTUtil.toBlockState(tag);
+            BlockState state = NBTUtil.readBlockState(tag);
 
             if (i > 0 || state != LitematicaBlockStateContainer.AIR_BLOCK_STATE)
             {
@@ -91,14 +91,14 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
 
         for (int id = 0; id < this.statePaletteMap.size(); ++id)
         {
-            BlockState state = this.statePaletteMap.get(id);
+            BlockState state = this.statePaletteMap.getByValue(id);
 
             if (state == null)
             {
                 state = LitematicaBlockStateContainer.AIR_BLOCK_STATE;
             }
 
-            CompoundNBT tag = NBTUtil.fromBlockState(state);
+            CompoundNBT tag = NBTUtil.writeBlockState(state);
             tagList.add(tag);
         }
 

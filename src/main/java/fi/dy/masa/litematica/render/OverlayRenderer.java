@@ -362,7 +362,7 @@ public class OverlayRenderer
                 Entity entity = fi.dy.masa.malilib.util.EntityUtils.getCameraEntity();
                 List<BlockPos> posList = verifier.getSelectedMismatchBlockPositionsForRender();
                 BlockRayTraceResult trace = RayTraceUtils.traceToPositions(posList, entity, 128);
-                BlockPos posLook = trace != null && trace.getType() == RayTraceResult.Type.BLOCK ? trace.getBlockPos() : null;
+                BlockPos posLook = trace != null && trace.getType() == RayTraceResult.Type.BLOCK ? trace.getPos() : null;
                 this.renderSchematicMismatches(list, posLook, matrices);
             }
         }
@@ -526,7 +526,7 @@ public class OverlayRenderer
 
             if (trace != null && trace.getType() == RayTraceResult.Type.BLOCK)
             {
-                BlockMismatch mismatch = verifier.getMismatchForPosition(trace.getBlockPos());
+                BlockMismatch mismatch = verifier.getMismatchForPosition(trace.getPos());
                 World worldSchematic = SchematicWorldHandler.getSchematicWorld();
 
                 if (mismatch != null && worldSchematic != null)
@@ -534,7 +534,7 @@ public class OverlayRenderer
                     BlockMismatchInfo info = new BlockMismatchInfo(mismatch.stateExpected, mismatch.stateFound);
                     BlockInfoAlignment align = (BlockInfoAlignment) Configs.InfoOverlays.BLOCK_INFO_OVERLAY_ALIGNMENT.getOptionListValue();
                     int offY = Configs.InfoOverlays.BLOCK_INFO_OVERLAY_OFFSET_Y.getIntegerValue();
-                    BlockPos pos = trace.getBlockPos();
+                    BlockPos pos = trace.getPos();
                     int invHeight = RenderUtils.renderInventoryOverlays(align, offY, worldSchematic, mc.world, pos, mc);
                     this.getOverlayPosition(align, info.getTotalWidth(), info.getTotalHeight(), offY, invHeight, mc);
                     info.render(this.blockInfoX, this.blockInfoY, mc, matrixStack);
@@ -551,7 +551,7 @@ public class OverlayRenderer
         BlockState air = Blocks.AIR.getDefaultState();
         World worldSchematic = SchematicWorldHandler.getSchematicWorld();
         World worldClient = WorldUtils.getBestWorld(mc);
-        BlockPos pos = traceWrapper.getBlockHitResult().getBlockPos();
+        BlockPos pos = traceWrapper.getBlockHitResult().getPos();
 
         BlockState stateClient = mc.world.getBlockState(pos);
         BlockState stateSchematic = worldSchematic.getBlockState(pos);
@@ -618,7 +618,7 @@ public class OverlayRenderer
     {
         this.blockInfoLines.clear();
 
-        BlockPos pos = traceWrapper.getBlockHitResult().getBlockPos();
+        BlockPos pos = traceWrapper.getBlockHitResult().getPos();
         BlockState stateClient = mc.world.getBlockState(pos);
 
         World worldSchematic = SchematicWorldHandler.getSchematicWorld();
@@ -643,7 +643,7 @@ public class OverlayRenderer
 
     private void addBlockInfoLines(BlockState state)
     {
-        this.blockInfoLines.add(String.valueOf(Registry.BLOCK.getId(state.getBlock())));
+        this.blockInfoLines.add(String.valueOf(Registry.BLOCK.getKey(state.getBlock())));
         this.blockInfoLines.addAll(BlockUtils.getFormattedBlockStateProperties(state));
     }
 
@@ -685,7 +685,7 @@ public class OverlayRenderer
         if (traceWrapper != null && traceWrapper.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
         {
             BlockRayTraceResult trace = traceWrapper.getBlockHitResult();
-            BlockPos pos = trace.getBlockPos();
+            BlockPos pos = trace.getPos();
 
             RenderSystem.depthMask(false);
             RenderSystem.disableLighting();
@@ -698,12 +698,12 @@ public class OverlayRenderer
             if (direction)
             {
                 fi.dy.masa.malilib.render.RenderUtils.renderBlockTargetingOverlay(
-                        entity, pos, trace.getSide(), trace.getPos(), color, matrixStack, this.mc);
+                        entity, pos, trace.getFace(), trace.getHitVec(), color, matrixStack, this.mc);
             }
             else
             {
                 fi.dy.masa.malilib.render.RenderUtils.renderBlockTargetingOverlaySimple(
-                        entity, pos, trace.getSide(), color, matrixStack, this.mc);
+                        entity, pos, trace.getFace(), color, matrixStack, this.mc);
             }
 
             RenderSystem.disablePolygonOffset();

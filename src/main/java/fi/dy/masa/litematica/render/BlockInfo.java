@@ -34,10 +34,10 @@ public class BlockInfo
         this.state = state;
         this.stack = ItemUtils.getItemForState(this.state);
 
-        ResourceLocation rl = Registry.BLOCK.getId(this.state.getBlock());
+        ResourceLocation rl = Registry.BLOCK.getKey(this.state.getBlock());
         this.blockRegistryname = rl != null ? rl.toString() : "<null>";
 
-        this.stackName = this.stack.getName().getString();
+        this.stackName = this.stack.getDisplayName().getString();
 
         int w = StringUtils.getStringWidth(this.stackName) + 20;
         w = Math.max(w, StringUtils.getStringWidth(this.blockRegistryname));
@@ -67,11 +67,11 @@ public class BlockInfo
 
             RenderUtils.drawOutlinedBox(x, y, this.totalWidth, this.totalHeight, 0xFF000000, GuiBase.COLOR_HORIZONTAL_BAR);
 
-            FontRenderer textRenderer = mc.textRenderer;
+            FontRenderer textRenderer = mc.fontRenderer;
             int x1 = x + 10;
             y += 4;
 
-            textRenderer.draw(matrixStack, this.title, x1, y, 0xFFFFFFFF);
+            textRenderer.drawString(matrixStack, this.title, x1, y, 0xFFFFFFFF);
 
             y += 12;
 
@@ -80,18 +80,18 @@ public class BlockInfo
 
             //mc.getRenderItem().zLevel += 100;
             RenderUtils.drawRect(x1, y, 16, 16, 0x20FFFFFF); // light background for the item
-            mc.getItemRenderer().renderInGui(this.stack, x1, y);
-            mc.getItemRenderer().renderGuiItemOverlay(textRenderer, this.stack, x1, y, null);
+            mc.getItemRenderer().renderItemAndEffectIntoGuiWithoutEntity(this.stack, x1, y);
+            mc.getItemRenderer().renderItemOverlayIntoGUI(textRenderer, this.stack, x1, y, null);
             //mc.getRenderItem().zLevel -= 100;
 
             //RenderSystem.disableBlend();
             RenderUtils.disableDiffuseLighting();
 
-            textRenderer.draw(matrixStack, this.stackName, x1 + 20, y + 4, 0xFFFFFFFF);
+            textRenderer.drawString(matrixStack, this.stackName, x1 + 20, y + 4, 0xFFFFFFFF);
 
             y += 20;
-            textRenderer.draw(matrixStack, this.blockRegistryname, x1, y, 0xFF4060FF);
-            y += textRenderer.fontHeight + 4;
+            textRenderer.drawString(matrixStack, this.blockRegistryname, x1, y, 0xFF4060FF);
+            y += textRenderer.FONT_HEIGHT + 4;
 
             RenderUtils.renderText(x1, y, 0xFFB0B0B0, this.props, matrixStack);
 

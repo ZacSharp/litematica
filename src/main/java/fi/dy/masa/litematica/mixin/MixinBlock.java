@@ -13,7 +13,7 @@ import fi.dy.masa.litematica.util.WorldUtils;
 @Mixin(Block.class)
 public class MixinBlock
 {
-    @Inject(method = "dropStack",
+    @Inject(method = "spawnAsEntity",
             at = @At("HEAD"), cancellable = true)
     private static void litematica_preventItemDrops(World world,
                                                     BlockPos pos,

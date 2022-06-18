@@ -138,7 +138,7 @@ public class SchematicPlacementManager
                     worldSchematic.getChunkProvider().loadChunk(pos.x, pos.z);
                 }
 
-                if (worldSchematic.getChunkProvider().isChunkLoaded(pos.x, pos.z))
+                if (worldSchematic.getChunkProvider().chunkExists(pos.x, pos.z))
                 {
                     //System.out.printf("placing at %s\n", pos);
                     Collection<SchematicPlacement> placements = this.schematicsTouchingChunk.get(pos);
@@ -187,7 +187,7 @@ public class SchematicPlacementManager
 
     private void unloadSchematicChunk(WorldSchematic worldSchematic, int chunkX, int chunkZ)
     {
-        if (worldSchematic.getChunkProvider().isChunkLoaded(chunkX, chunkZ))
+        if (worldSchematic.getChunkProvider().chunkExists(chunkX, chunkZ))
         {
             //System.out.printf("unloading chunk at %d, %d\n", chunkX, chunkZ);
             worldSchematic.scheduleChunkRenders(chunkX, chunkZ);
@@ -583,12 +583,12 @@ public class SchematicPlacementManager
                 return;
             }
 
-            BlockPos pos = ((BlockRayTraceResult) trace).getBlockPos();
+            BlockPos pos = ((BlockRayTraceResult) trace).getPos();
 
             // Sneaking puts the position inside the targeted block, not sneaking puts it against the targeted face
             if (mc.player.isSneaking() == false)
             {
-                pos = pos.offset(((BlockRayTraceResult) trace).getSide());
+                pos = pos.offset(((BlockRayTraceResult) trace).getFace());
             }
 
             this.setPositionOfCurrentSelectionTo(pos, mc);
@@ -708,7 +708,7 @@ public class SchematicPlacementManager
 
     public void pastePlacementToWorld(final SchematicPlacement schematicPlacement, boolean changedBlocksOnly, boolean printMessage, Minecraft mc)
     {
-        if (mc.player != null && mc.player.abilities.creativeMode)
+        if (mc.player != null && mc.player.abilities.isCreativeMode)
         {
             if (schematicPlacement != null)
             {
@@ -727,7 +727,7 @@ public class SchematicPlacementManager
                     GuiConfirmAction screen = new GuiConfirmAction(320, "Confirm paste to command files", cl, null, "Are you sure you want to paste the current placement as setblock commands into command/mcfunction files?");
                     GuiBase.openGui(screen);
                 }
-                else if (mc.isIntegratedServerRunning())
+                else if (mc.isSingleplayer())
                 {
                     TaskPasteSchematicPerChunkBase task = new TaskPasteSchematicPerChunkDirect(Collections.singletonList(schematicPlacement), range, changedBlocksOnly);
                     TaskScheduler.getInstanceServer().scheduleTask(task, 20);

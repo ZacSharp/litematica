@@ -139,7 +139,7 @@ public abstract class TaskBase implements ITask, IInfoHudRenderer
         {
             List<ChunkPos> list = new ArrayList<>();
             list.addAll(requiredChunks);
-            PositionUtils.CHUNK_POS_COMPARATOR.setReferencePosition(new BlockPos(player.getPos()));
+            PositionUtils.CHUNK_POS_COMPARATOR.setReferencePosition(new BlockPos(player.getPositionVec()));
             PositionUtils.CHUNK_POS_COMPARATOR.setClosestFirst(true);
             Collections.sort(list, PositionUtils.CHUNK_POS_COMPARATOR);
 

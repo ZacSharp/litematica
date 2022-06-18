@@ -47,7 +47,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 public class WorldSchematic extends World
 {
-    private static final RegistryKey<World> REGISTRY_KEY = RegistryKey.of(Registry.DIMENSION, new ResourceLocation(Reference.MOD_ID, "schematic_world"));
+    private static final RegistryKey<World> REGISTRY_KEY = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, new ResourceLocation(Reference.MOD_ID, "schematic_world"));
 
     private final Minecraft mc;
     private final WorldRendererSchematic worldRenderer;
@@ -64,25 +64,20 @@ public class WorldSchematic extends World
         this.chunkManagerSchematic = new ChunkManagerSchematic(this);
     }
 
+    @Override
     public ChunkManagerSchematic getChunkProvider()
     {
         return this.chunkManagerSchematic;
     }
 
     @Override
-    public ChunkManagerSchematic getChunkManager()
-    {
-        return this.chunkManagerSchematic;
-    }
-
-    @Override
-    public ITickList<Block> getBlockTickScheduler()
+    public ITickList<Block> getPendingBlockTicks()
     {
         return EmptyTickList.get();
     }
 
     @Override
-    public ITickList<Fluid> getFluidTickScheduler()
+    public ITickList<Fluid> getPendingFluidTicks()
     {
         return EmptyTickList.get();
     }
@@ -93,7 +88,7 @@ public class WorldSchematic extends World
     }
 
     @Override
-    public Chunk getWorldChunk(BlockPos pos)
+    public Chunk getChunkAt(BlockPos pos)
     {
         return this.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
     }
@@ -101,7 +96,7 @@ public class WorldSchematic extends World
     @Override
     public Chunk getChunk(int chunkX, int chunkZ)
     {
-        return this.chunkManagerSchematic.getChunk(chunkX, chunkZ);
+        return this.chunkManagerSchematic.getChunkForLight(chunkX, chunkZ);
     }
 
     @Override
@@ -111,7 +106,7 @@ public class WorldSchematic extends World
     }
 
     @Override
-    public Biome getGeneratorStoredBiome(int biomeX, int biomeY, int biomeZ)
+    public Biome getNoiseBiomeRaw(int biomeX, int biomeY, int biomeZ)
     {
         return BiomeRegistry.PLAINS;
     }
@@ -129,17 +124,17 @@ public class WorldSchematic extends World
         }
     }
 
-    public boolean spawnEntity(Entity entityIn)
+    public boolean addEntity(Entity entityIn)
     {
         return this.spawnEntityBase(entityIn);
     }
 
     private boolean spawnEntityBase(Entity entity)
     {
-        int cx = MathHelper.floor(entity.getX() / 16.0D);
-        int cz = MathHelper.floor(entity.getZ() / 16.0D);
+        int cx = MathHelper.floor(entity.getPosX() / 16.0D);
+        int cz = MathHelper.floor(entity.getPosZ() / 16.0D);
 
-        if (this.chunkManagerSchematic.isChunkLoaded(cx, cz) == false)
+        if (this.chunkManagerSchematic.chunkExists(cx, cz) == false)
         {
             return false;
         }
@@ -151,7 +146,7 @@ public class WorldSchematic extends World
             this.removeEntity(id);
 
             this.regularEntities.put(id, entity);
-            this.chunkManagerSchematic.getChunk(MathHelper.floor(entity.getX() / 16.0D), MathHelper.floor(entity.getZ() / 16.0D)).addEntity(entity);
+            this.chunkManagerSchematic.getChunkForLight(MathHelper.floor(entity.getPosX() / 16.0D), MathHelper.floor(entity.getPosZ() / 16.0D)).addEntity(entity);
 
             return true;
         }
@@ -166,16 +161,16 @@ public class WorldSchematic extends World
             entity.remove();
             entity.detach();
 
-            if (entity.updateNeeded)
+            if (entity.addedToChunk)
             {
-                this.getChunk(entity.chunkX, entity.chunkZ).remove(entity);
+                this.getChunk(entity.chunkCoordX, entity.chunkCoordZ).removeEntity(entity);
             }
         }
     }
 
     @Nullable
     @Override
-    public Entity getEntityById(int id)
+    public Entity getEntityByID(int id)
     {
         return this.regularEntities.get(id);
     }
@@ -190,25 +185,25 @@ public class WorldSchematic extends World
     {
         Set<TileEntity> remove = Collections.newSetFromMap(new IdentityHashMap<>());
         remove.addAll(blockEntities);
-        this.tickingBlockEntities.removeAll(remove);
-        this.blockEntities.removeAll(remove);
+        this.tickableTileEntities.removeAll(remove);
+        this.loadedTileEntityList.removeAll(remove);
     }
 
     @Override
-    public long getTime()
+    public long getGameTime()
     {
-        return this.mc.world != null ? this.mc.world.getTime() : 0;
+        return this.mc.world != null ? this.mc.world.getGameTime() : 0;
     }
 
     @Override
     @Nullable
-    public MapData getMapState(String id)
+    public MapData getMapData(String id)
     {
         return null;
     }
 
     @Override
-    public void putMapState(MapData mapState)
+    public void registerMapData(MapData mapState)
     {
         // NO-OP
     }
@@ -232,13 +227,13 @@ public class WorldSchematic extends World
     }
 
     @Override
-    public ITagCollectionSupplier getTagManager()
+    public ITagCollectionSupplier getTags()
     {
-        return this.mc.world != null ? this.mc.world.getTagManager() : null;
+        return this.mc.world != null ? this.mc.world.getTags() : null;
     }
 
     @Override
-    public void scheduleBlockRerenderIfNeeded(BlockPos pos, BlockState stateOld, BlockState stateNew)
+    public void markBlockRangeForRenderUpdate(BlockPos pos, BlockState stateOld, BlockState stateNew)
     {
         this.scheduleBlockRenders(pos.getX() >> 4, pos.getY() >> 4, pos.getZ() >> 4);
     }
@@ -281,43 +276,43 @@ public class WorldSchematic extends World
     }
 
     @Override
-    public float getBrightness(Direction direction, boolean shaded)
+    public float func_230487_a_(Direction direction, boolean shaded)
     {
         return 0;
     }
 
     @Override
-    public int getLightLevel(LightType type, BlockPos pos)
+    public int getLightFor(LightType type, BlockPos pos)
     {
         return 15;
     }
 
     @Override
-    public int getBaseLightLevel(BlockPos pos, int defaultValue)
+    public int getLightSubtracted(BlockPos pos, int defaultValue)
     {
         return 15;
     }
 
     @Override
-    public void updateListeners(BlockPos blockPos_1, BlockState blockState_1, BlockState blockState_2, int flags)
+    public void notifyBlockUpdate(BlockPos blockPos_1, BlockState blockState_1, BlockState blockState_2, int flags)
     {
         // NO-OP
     }
 
     @Override
-    public void setBlockBreakingInfo(int entityId, BlockPos pos, int progress)
+    public void sendBlockBreakProgress(int entityId, BlockPos pos, int progress)
     {
         // NO-OP
     }
 
     @Override
-    public void syncGlobalEvent(int eventId, BlockPos pos, int data)
+    public void playBroadcastSound(int eventId, BlockPos pos, int data)
     {
         // NO-OP
     }
     
     @Override
-    public void syncWorldEvent(@Nullable PlayerEntity playerEntity, int id, BlockPos pos, int data)
+    public void playEvent(@Nullable PlayerEntity playerEntity, int id, BlockPos pos, int data)
     {
     }
 
@@ -334,13 +329,13 @@ public class WorldSchematic extends World
     }
 
     @Override
-    public void addImportantParticle(IParticleData particleParameters_1, double double_1, double double_2, double double_3, double double_4,   double double_5, double double_6)
+    public void addOptionalParticle(IParticleData particleParameters_1, double double_1, double double_2, double double_3, double double_4,   double double_5, double double_6)
     {
         // NO-OP
     }
 
     @Override
-    public void addImportantParticle(IParticleData particleParameters_1, boolean boolean_1, double double_1, double double_2, double double_3,     double double_4, double double_5, double double_6)
+    public void addOptionalParticle(IParticleData particleParameters_1, boolean boolean_1, double double_1, double double_2, double double_3,     double double_4, double double_5, double double_6)
     {
         // NO-OP
     }
@@ -364,14 +359,14 @@ public class WorldSchematic extends World
     }
 
     @Override
-    public void playSoundFromEntity(@Nullable PlayerEntity player, Entity entity, SoundEvent sound, SoundCategory category, float volume, float pitch)
+    public void playMovingSound(@Nullable PlayerEntity player, Entity entity, SoundEvent sound, SoundCategory category, float volume, float pitch)
     {
         // NO-OP
     }
 
     @Override
-    public DynamicRegistries getRegistryManager()
+    public DynamicRegistries func_241828_r() // getRegistryManager
     {
-        return this.mc.world.getRegistryManager();
+        return this.mc.world.func_241828_r(); // getRegistryManager
     }
 }

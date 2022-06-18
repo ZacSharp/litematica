@@ -15,7 +15,7 @@ public abstract class MixinWorldRenderer
     @Shadow
     private net.minecraft.client.world.ClientWorld world;
 
-    @Inject(method = "reload()V", at = @At("RETURN"))
+    @Inject(method = "loadRenderers()V", at = @At("RETURN"))
     private void onLoadRenderers(CallbackInfo ci)
     {
         // Also (re-)load our renderer when the vanilla renderer gets reloaded
@@ -34,7 +34,7 @@ public abstract class MixinWorldRenderer
         LitematicaRenderer.getInstance().piecewisePrepareAndUpdate(frustum);
     }
 
-    @Inject(method = "renderLayer", at = @At("TAIL"))
+    @Inject(method = "renderBlockLayer", at = @At("TAIL"))
     private void onRenderLayer(RenderType renderLayer, MatrixStack matrixStack, double x, double y, double z, CallbackInfo ci)
     {
         if (renderLayer == RenderType.getSolid())
@@ -56,9 +56,9 @@ public abstract class MixinWorldRenderer
         }
     }
 
-    @Inject(method = "render",
+    @Inject(method = "updateCameraAndRender",
             at = @At(value = "INVOKE_STRING", args = "ldc=blockentities",
-                     target = "Lnet/minecraft/profiler/IProfiler;swap(Ljava/lang/String;)V"))
+                     target = "Lnet/minecraft/profiler/IProfiler;endStartSection(Ljava/lang/String;)V"))
     private void onPostRenderEntities(
             com.mojang.blaze3d.matrix.MatrixStack matrices,
             float tickDelta, long limitTime, boolean renderBlockOutline,
@@ -72,7 +72,7 @@ public abstract class MixinWorldRenderer
     }
 
     /*
-    @Inject(method = "render", at = @At("TAIL"))
+    @Inject(method = "updateCameraAndRender", at = @At("TAIL"))
     private void onRenderWorldLast(
             com.mojang.blaze3d.matrix.MatrixStack matrices,
             float tickDelta, long limitTime, boolean renderBlockOutline,

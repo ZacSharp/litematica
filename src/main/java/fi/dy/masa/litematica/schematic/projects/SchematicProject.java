@@ -33,7 +33,7 @@ public class SchematicProject
     private final List<SchematicVersion> versions = new ArrayList<>();
     private final File directory;
     private File projectFile;
-    private BlockPos origin = BlockPos.ORIGIN;
+    private BlockPos origin = BlockPos.ZERO;
     private String projectName = "unnamed";
     private AreaSelection selection = new AreaSelection();
     private AreaSelection lastSeenArea = new AreaSelection();
@@ -234,7 +234,7 @@ public class SchematicProject
         {
             Minecraft mc = Minecraft.getInstance();
 
-            if (mc.player == null || mc.player.abilities.creativeMode == false)
+            if (mc.player == null || mc.player.abilities.isCreativeMode == false)
             {
                 InfoUtils.showGuiOrInGameMessage(MessageType.ERROR, "litematica.error.generic.creative_mode_only");
                 return;
@@ -363,7 +363,7 @@ public class SchematicProject
 
     public void clear()
     {
-        this.origin = BlockPos.ORIGIN;
+        this.origin = BlockPos.ZERO;
         this.versions.clear();
         this.selection = new AreaSelection();
         this.selectionSimple = new AreaSelectionSimple(true);
@@ -534,7 +534,7 @@ public class SchematicProject
         {
             Minecraft mc = Minecraft.getInstance();
 
-            if (mc.isOnThread())
+            if (mc.isOnExecutionThread())
             {
                 this.saveVersion();
             }

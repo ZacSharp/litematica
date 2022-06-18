@@ -38,13 +38,13 @@ public class TaskPasteSchematicPerChunkDirect extends TaskPasteSchematicPerChunk
     @Override
     public boolean canExecute()
     {
-        if (super.canExecute() == false || this.mc.isIntegratedServerRunning() == false)
+        if (super.canExecute() == false || this.mc.isSingleplayer() == false)
         {
             return false;
         }
 
         World world = WorldUtils.getBestWorld(this.mc);
-        return world != null && world.isClient == false;
+        return world != null && world.isRemote == false;
     }
 
     @Override
@@ -54,16 +54,16 @@ public class TaskPasteSchematicPerChunkDirect extends TaskPasteSchematicPerChunk
         ClientWorld worldClient = this.mc.world;
         World world = WorldUtils.getBestWorld(this.mc);
         int processed = 0;
-        MinecraftServer server = this.mc.getServer();
-        long timeStart = Util.getMeasuringTimeNano();
-        long vanillaTickTime = server.lastTickLengths[server.getTicks() % 100];
+        MinecraftServer server = this.mc.getIntegratedServer();
+        long timeStart = Util.nanoTime();
+        long vanillaTickTime = server.tickTimeArray[server.getTickCounter() % 100];
 
         this.sortChunkList();
 
         for (int chunkIndex = 0; chunkIndex < this.chunks.size(); ++chunkIndex)
         {
             ChunkPos pos = this.chunks.get(chunkIndex);
-            long currentTime = Util.getMeasuringTimeNano();
+            long currentTime = Util.nanoTime();
             long elapsedTickTime = vanillaTickTime + (currentTime - timeStart);
 
             if (elapsedTickTime >= 60000000L)

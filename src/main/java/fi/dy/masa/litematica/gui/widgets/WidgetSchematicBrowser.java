@@ -53,9 +53,9 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
     }
 
     @Override
-    public void onClose()
+    public void closeScreen()
     {
-        super.onClose();
+        super.closeScreen();
 
         this.clearPreviewImages();
     }
@@ -174,7 +174,7 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
             {
                 y += 14;
 
-                int iconSize = pair.getRight().getImage().getWidth();
+                int iconSize = pair.getRight().getTextureData().getWidth();
                 boolean needsScaling = height < this.infoHeight;
 
                 RenderUtils.color(1f, 1f, 1f, 1f);
@@ -187,7 +187,7 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
                 RenderUtils.drawOutlinedBox(x + 4, y, iconSize, iconSize, 0xA0000000, COLOR_HORIZONTAL_BAR);
 
                 this.bindTexture(pair.getLeft());
-                AbstractGui.drawTexture(matrixStack, x + 4, y, 0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
+                AbstractGui.blit(matrixStack, x + 4, y, 0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
             }
         }
     }
@@ -227,7 +227,7 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
     {
         for (Pair<ResourceLocation, DynamicTexture> pair : this.cachedPreviewImages.values())
         {
-            this.mc.getTextureManager().destroyTexture(pair.getLeft());
+            this.mc.getTextureManager().deleteTexture(pair.getLeft());
         }
     }
 
@@ -246,7 +246,7 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
                     NativeImage image = new NativeImage(size, size, false);
                     DynamicTexture tex = new DynamicTexture(image);
                     ResourceLocation rl = new ResourceLocation("litematica", DigestUtils.sha1Hex(file.getAbsolutePath()));
-                    this.mc.getTextureManager().registerTexture(rl, tex);
+                    this.mc.getTextureManager().loadTexture(rl, tex);
 
                     for (int y = 0, i = 0; y < size; ++y)
                     {
@@ -255,11 +255,11 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
                             int val = previewImageData[i++];
                             // Swap the color channels from ARGB to ABGR
                             val = (val & 0xFF00FF00) | (val & 0xFF0000) >> 16 | (val & 0xFF) << 16;
-                            image.setPixelColor(x, y, val);
+                            image.setPixelRGBA(x, y, val);
                         }
                     }
 
-                    tex.upload();
+                    tex.updateDynamicTexture();
 
                     this.cachedPreviewImages.put(file, Pair.of(rl, tex));
                 }

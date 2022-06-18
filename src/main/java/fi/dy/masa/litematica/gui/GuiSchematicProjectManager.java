@@ -180,7 +180,7 @@ public class GuiSchematicProjectManager extends GuiListBase<SchematicVersion, Wi
                 if (project != null)
                 {
 //                    project.setOrigin(fi.dy.masa.malilib.util.PositionUtils.getEntityBlockPos(this.gui.mc.player));
-                    project.setOrigin(new BlockPos(Math.floor(this.gui.mc.player.getX()), Math.floor(this.gui.mc.player.getY()), Math.floor(this.gui.mc.player.getZ())));
+                    project.setOrigin(new BlockPos(Math.floor(this.gui.mc.player.getPosX()), Math.floor(this.gui.mc.player.getPosY()), Math.floor(this.gui.mc.player.getPosZ())));
                     this.gui.reCreateGuiElements();
                 }
             }

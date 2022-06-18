@@ -21,7 +21,7 @@ public class ChunkManagerSchematic extends AbstractChunkProvider
     {
         this.world = world;
         this.blankChunk = new ChunkSchematic(world, new ChunkPos(0, 0));
-        this.lightingProvider = new WorldLightManager(this, true, world.getDimension().hasSkyLight());
+        this.lightingProvider = new WorldLightManager(this, true, world.getDimensionType().hasSkyLight());
     }
 
     @Override
@@ -33,16 +33,16 @@ public class ChunkManagerSchematic extends AbstractChunkProvider
     public void loadChunk(int chunkX, int chunkZ)
     {
         ChunkSchematic chunk = new ChunkSchematic(this.world, new ChunkPos(chunkX, chunkZ));
-        this.loadedChunks.put(ChunkPos.toLong(chunkX, chunkZ), chunk);
+        this.loadedChunks.put(ChunkPos.asLong(chunkX, chunkZ), chunk);
     }
 
     @Override
-    public boolean isChunkLoaded(int chunkX, int chunkZ)
+    public boolean chunkExists(int chunkX, int chunkZ)
     {
-        return this.loadedChunks.containsKey(ChunkPos.toLong(chunkX, chunkZ));
+        return this.loadedChunks.containsKey(ChunkPos.asLong(chunkX, chunkZ));
     }
 
-    public String getDebugString()
+    public String makeString()
     {
         return "Schematic Chunk Cache: " + this.getLoadedChunkCount();
     }
@@ -60,28 +60,28 @@ public class ChunkManagerSchematic extends AbstractChunkProvider
     @Override
     public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus status, boolean fallbackToEmpty)
     {
-        ChunkSchematic chunk = this.getChunk(chunkX, chunkZ);
+        ChunkSchematic chunk = this.getChunkForLight(chunkX, chunkZ);
         return chunk == null && fallbackToEmpty ? this.blankChunk : chunk;
     }
 
     @Override
-    public ChunkSchematic getChunk(int chunkX, int chunkZ)
+    public ChunkSchematic getChunkForLight(int chunkX, int chunkZ)
     {
-        ChunkSchematic chunk = this.loadedChunks.get(ChunkPos.toLong(chunkX, chunkZ));
+        ChunkSchematic chunk = this.loadedChunks.get(ChunkPos.asLong(chunkX, chunkZ));
         return chunk == null ? this.blankChunk : chunk;
     }
 
     public void unloadChunk(int chunkX, int chunkZ)
     {
-        ChunkSchematic chunk = this.loadedChunks.remove(ChunkPos.toLong(chunkX, chunkZ));
+        ChunkSchematic chunk = this.loadedChunks.remove(ChunkPos.asLong(chunkX, chunkZ));
 
         if (chunk != null)
         {
-            this.world.unloadBlockEntities(chunk.getBlockEntities().values());
+            this.world.unloadBlockEntities(chunk.getTileEntityMap().values());
 
-            for (ClassInheritanceMultiMap<Entity> list : chunk.getEntitySectionArray())
+            for (ClassInheritanceMultiMap<Entity> list : chunk.getEntityLists())
             {
-                for (Entity entity : list.getAllOfType(Entity.class))
+                for (Entity entity : list.getByClass(Entity.class))
                 {
                     this.world.removeEntity(entity.getEntityId());
                 }
@@ -90,7 +90,7 @@ public class ChunkManagerSchematic extends AbstractChunkProvider
     }
 
     @Override
-    public WorldLightManager getLightingProvider()
+    public WorldLightManager getLightManager()
     {
         return this.lightingProvider;
     }

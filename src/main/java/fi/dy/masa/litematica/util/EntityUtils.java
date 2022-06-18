@@ -49,12 +49,12 @@ public class EntityUtils
 
         if (toolItem.isEmpty())
         {
-            return entity.getMainHandStack().isEmpty();
+            return entity.getHeldItemMainhand().isEmpty();
         }
 
-        ItemStack stackHand = entity.getStackInHand(hand);
+        ItemStack stackHand = entity.getHeldItem(hand);
 
-        if (ItemStack.areItemsEqualIgnoreDamage(toolItem, stackHand))
+        if (ItemStack.areItemsEqual(toolItem, stackHand))
         {
             return toolItem.hasTag() == false || ItemUtils.areTagsEqualIgnoreDamage(toolItem, stackHand);
         }
@@ -74,12 +74,12 @@ public class EntityUtils
     {
         Hand hand = null;
 
-        if (InventoryUtils.areStacksEqual(player.getMainHandStack(), stack))
+        if (InventoryUtils.areStacksEqual(player.getHeldItemMainhand(), stack))
         {
             hand = Hand.MAIN_HAND;
         }
-        else if (player.getMainHandStack().isEmpty() &&
-                 InventoryUtils.areStacksEqual(player.getOffHandStack(), stack))
+        else if (player.getHeldItemMainhand().isEmpty() &&
+                 InventoryUtils.areStacksEqual(player.getHeldItemOffhand(), stack))
         {
             hand = Hand.OFF_HAND;
         }
@@ -89,26 +89,26 @@ public class EntityUtils
 
     public static boolean areStacksEqualIgnoreDurability(ItemStack stack1, ItemStack stack2)
     {
-        return ItemStack.areItemsEqualIgnoreDamage(stack1, stack2) && ItemStack.areTagsEqual(stack1, stack2);
+        return ItemStack.areItemsEqual(stack1, stack2) && ItemStack.areItemStackTagsEqual(stack1, stack2);
     }
 
     public static Direction getHorizontalLookingDirection(Entity entity)
     {
-        return Direction.fromRotation(entity.yaw);
+        return Direction.fromAngle(entity.rotationYaw);
     }
 
     public static Direction getVerticalLookingDirection(Entity entity)
     {
-        return entity.pitch > 0 ? Direction.DOWN : Direction.UP;
+        return entity.rotationPitch > 0 ? Direction.DOWN : Direction.UP;
     }
 
     public static Direction getClosestLookingDirection(Entity entity)
     {
-        if (entity.pitch > 60.0f)
+        if (entity.rotationPitch > 60.0f)
         {
             return Direction.DOWN;
         }
-        else if (-entity.pitch > 60.0f)
+        else if (-entity.rotationPitch > 60.0f)
         {
             return Direction.UP;
         }
@@ -126,7 +126,7 @@ public class EntityUtils
 
         for (T entity : list)
         {
-            if (entity.getUuid().equals(uuid))
+            if (entity.getUniqueID().equals(uuid))
             {
                 return entity;
             }
@@ -139,8 +139,8 @@ public class EntityUtils
     public static String getEntityId(Entity entity)
     {
         EntityType<?> entitytype = entity.getType();
-        ResourceLocation resourcelocation = EntityType.getId(entitytype);
-        return entitytype.isSaveable() && resourcelocation != null ? resourcelocation.toString() : null;
+        ResourceLocation resourcelocation = EntityType.getKey(entitytype);
+        return entitytype.isSerializable() && resourcelocation != null ? resourcelocation.toString() : null;
     }
 
     @Nullable
@@ -148,12 +148,12 @@ public class EntityUtils
     {
         try
         {
-            Optional<Entity> optional = EntityType.getEntityFromTag(nbt, world);
+            Optional<Entity> optional = EntityType.loadEntityUnchecked(nbt, world);
 
             if (optional.isPresent())
             {
                 Entity entity = optional.get();
-                entity.setUuid(UUID.randomUUID());
+                entity.setUniqueId(UUID.randomUUID());
                 return entity;
             }
         }
@@ -202,16 +202,16 @@ public class EntityUtils
 
     public static void spawnEntityAndPassengersInWorld(Entity entity, World world)
     {
-        if (world.spawnEntity(entity) && entity.hasPassengers())
+        if (world.addEntity(entity) && entity.isBeingRidden())
         {
-            for (Entity passenger : entity.getPassengerList())
+            for (Entity passenger : entity.getPassengers())
             {
-                passenger.refreshPositionAndAngles(
-                        entity.getX(),
-                        entity.getY() + entity.getMountedHeightOffset() + passenger.getHeightOffset(),
-                        entity.getZ(),
-                        passenger.yaw, passenger.pitch);
-                setEntityRotations(passenger, passenger.yaw, passenger.pitch);
+                passenger.setLocationAndAngles(
+                        entity.getPosX(),
+                        entity.getPosY() + entity.getMountedYOffset() + passenger.getYOffset(),
+                        entity.getPosZ(),
+                        passenger.rotationYaw, passenger.rotationPitch);
+                setEntityRotations(passenger, passenger.rotationYaw, passenger.rotationPitch);
                 spawnEntityAndPassengersInWorld(passenger, world);
             }
         }
@@ -219,19 +219,19 @@ public class EntityUtils
 
     public static void setEntityRotations(Entity entity, float yaw, float pitch)
     {
-        entity.yaw = yaw;
-        entity.prevYaw = yaw;
+        entity.rotationYaw = yaw;
+        entity.prevRotationYaw = yaw;
 
-        entity.pitch = pitch;
-        entity.prevPitch = pitch;
+        entity.rotationPitch = pitch;
+        entity.prevRotationPitch = pitch;
 
         if (entity instanceof LivingEntity)
         {
             LivingEntity livingBase = (LivingEntity) entity;
-            livingBase.headYaw = yaw;
-            livingBase.bodyYaw = yaw;
-            livingBase.prevHeadYaw = yaw;
-            livingBase.prevBodyYaw = yaw;
+            livingBase.rotationYawHead = yaw;
+            livingBase.renderYawOffset = yaw;
+            livingBase.prevRotationYawHead = yaw;
+            livingBase.prevRenderYawOffset = yaw;
             //livingBase.renderYawOffset = yaw;
             //livingBase.prevRenderYawOffset = yaw;
         }
@@ -246,7 +246,7 @@ public class EntityUtils
         BlockPos regionPosAbs = regionPosRelTransformed.add(origin);
         net.minecraft.util.math.AxisAlignedBB bb = PositionUtils.createEnclosingAABB(regionPosAbs, posEndAbs);
 
-        return world.getOtherEntities((Entity) null, bb, null);
+        return world.getEntitiesInAABBexcluding((Entity) null, bb, null);
     }
 
     public static boolean shouldPickBlock(PlayerEntity player)

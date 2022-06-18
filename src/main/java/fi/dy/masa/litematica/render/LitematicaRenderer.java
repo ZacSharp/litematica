@@ -46,7 +46,7 @@ public class LitematicaRenderer
         int program = SHADER_ALPHA.getProgram();
         int oldProgram = GlStateManager.getInteger(GL20.GL_CURRENT_PROGRAM);
         GlStateManager.useProgram(program);
-        GlStateManager.uniform1(GlStateManager.getUniformLocation(program, "texture"), 0);
+        GlStateManager.uniform1i(GlStateManager.getUniformLocation(program, "texture"), 0);
         GlStateManager.useProgram(oldProgram);
     }
 
@@ -303,7 +303,7 @@ public class LitematicaRenderer
     {
         this.renderPiecewise = Configs.Generic.BETTER_RENDER_ORDER.getBooleanValue() &&
                                Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
-                               this.mc.getCameraEntity() != null;
+                               this.mc.getRenderViewEntity() != null;
         this.renderPiecewiseSchematic = false;
         this.renderPiecewiseBlocks = false;
         WorldRendererSchematic worldRenderer = this.getWorldRenderer();
@@ -315,17 +315,17 @@ public class LitematicaRenderer
             this.renderPiecewiseBlocks = this.renderPiecewiseSchematic && Configs.Visuals.ENABLE_SCHEMATIC_BLOCKS.getBooleanValue();
             this.renderCollidingSchematicBlocks = Configs.Visuals.RENDER_COLLIDING_SCHEMATIC_BLOCKS.getBooleanValue();
 
-            this.mc.getProfiler().push("litematica_culling");
+            this.mc.getProfiler().startSection("litematica_culling");
 
             this.calculateFinishTime();
 
-            this.mc.getProfiler().swap("litematica_terrain_setup");
+            this.mc.getProfiler().endStartSection("litematica_terrain_setup");
             worldRenderer.setupTerrain(this.getCamera(), frustum, this.frameCount++, this.mc.player.isSpectator());
 
-            this.mc.getProfiler().swap("litematica_update_chunks");
+            this.mc.getProfiler().endStartSection("litematica_update_chunks");
             worldRenderer.updateChunks(this.finishTimeNano);
 
-            this.mc.getProfiler().pop();
+            this.mc.getProfiler().endSection();
 
             this.frustum = frustum;
         }
@@ -335,7 +335,7 @@ public class LitematicaRenderer
     {
         if (this.renderPiecewiseBlocks)
         {
-            this.mc.getProfiler().push("litematica_blocks_solid");
+            this.mc.getProfiler().startSection("litematica_blocks_solid");
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -356,7 +356,7 @@ public class LitematicaRenderer
                 RenderSystem.disablePolygonOffset();
             }
 
-            this.mc.getProfiler().pop();
+            this.mc.getProfiler().endSection();
         }
     }
 
@@ -364,7 +364,7 @@ public class LitematicaRenderer
     {
         if (this.renderPiecewiseBlocks)
         {
-            this.mc.getProfiler().push("litematica_blocks_cutout_mipped");
+            this.mc.getProfiler().startSection("litematica_blocks_cutout_mipped");
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -384,7 +384,7 @@ public class LitematicaRenderer
                 RenderSystem.disablePolygonOffset();
             }
 
-            this.mc.getProfiler().pop();
+            this.mc.getProfiler().endSection();
         }
     }
 
@@ -392,7 +392,7 @@ public class LitematicaRenderer
     {
         if (this.renderPiecewiseBlocks)
         {
-            this.mc.getProfiler().push("litematica_blocks_cutout");
+            this.mc.getProfiler().startSection("litematica_blocks_cutout");
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -412,7 +412,7 @@ public class LitematicaRenderer
                 RenderSystem.disablePolygonOffset();
             }
 
-            this.mc.getProfiler().pop();
+            this.mc.getProfiler().endSection();
         }
     }
 
@@ -420,7 +420,7 @@ public class LitematicaRenderer
     {
         if (this.renderPiecewiseBlocks)
         {
-            this.mc.getProfiler().push("litematica_translucent");
+            this.mc.getProfiler().startSection("litematica_translucent");
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -440,7 +440,7 @@ public class LitematicaRenderer
                 RenderSystem.disablePolygonOffset();
             }
 
-            this.mc.getProfiler().pop();
+            this.mc.getProfiler().endSection();
         }
     }
 
@@ -448,23 +448,23 @@ public class LitematicaRenderer
     {
         if (this.renderPiecewiseSchematic)
         {
-            this.mc.getProfiler().push("litematica_overlay");
+            this.mc.getProfiler().startSection("litematica_overlay");
 
-            Framebuffer fb = Minecraft.isFabulousGraphicsOrBetter() ? this.mc.worldRenderer.getTranslucentFramebuffer() : null;
+            Framebuffer fb = Minecraft.isFabulousGraphicsEnabled() ? this.mc.worldRenderer.getTranslucentFrameBuffer() : null;
 
             if (fb != null)
             {
-                fb.beginWrite(false);
+                fb.bindFramebuffer(false);
             }
 
             this.renderSchematicOverlay(matrices);
 
             if (fb != null)
             {
-                mc.getFramebuffer().beginWrite(false);
+                mc.getFramebuffer().bindFramebuffer(false);
             }
 
-            this.mc.getProfiler().pop();
+            this.mc.getProfiler().endSection();
         }
 
         this.cleanup();
@@ -474,7 +474,7 @@ public class LitematicaRenderer
     {
         if (this.renderPiecewiseBlocks)
         {
-            this.mc.getProfiler().push("litematica_entities");
+            this.mc.getProfiler().startSection("litematica_entities");
 
             fi.dy.masa.malilib.render.RenderUtils.setupBlend();
 
@@ -486,13 +486,13 @@ public class LitematicaRenderer
 
             RenderSystem.disableBlend();
 
-            this.mc.getProfiler().pop();
+            this.mc.getProfiler().endSection();
         }
     }
 
     private ActiveRenderInfo getCamera()
     {
-        return this.mc.gameRenderer.getCamera();
+        return this.mc.gameRenderer.getActiveRenderInfo();
     }
 
     private void cleanup()

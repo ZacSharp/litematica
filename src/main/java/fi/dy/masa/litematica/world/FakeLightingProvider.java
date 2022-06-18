@@ -20,13 +20,13 @@ public class FakeLightingProvider extends WorldLightManager
     }
 
     @Override
-    public IWorldLightListener get(LightType type)
+    public IWorldLightListener getLightEngine(LightType type)
     {
         return this.lightingView;
     }
 
     @Override
-    public int getLight(BlockPos pos, int defaultValue)
+    public int getLightSubtracted(BlockPos pos, int defaultValue)
     {
         return 15;
     }
@@ -35,19 +35,19 @@ public class FakeLightingProvider extends WorldLightManager
     {
         @Nullable
         @Override
-        public NibbleArray getLightSection(SectionPos pos)
+        public NibbleArray getData(SectionPos pos)
         {
             return null;
         }
 
         @Override
-        public int getLightLevel(BlockPos pos)
+        public int getLightFor(BlockPos pos)
         {
             return 15;
         }
 
         @Override
-        public void setSectionStatus(SectionPos pos, boolean notReady)
+        public void updateSectionStatus(SectionPos pos, boolean notReady)
         {
             // NO-OP
         }

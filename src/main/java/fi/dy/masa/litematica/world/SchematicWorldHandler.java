@@ -18,7 +18,7 @@ public class SchematicWorldHandler
     public static final DimensionType DIMENSIONTYPE = new PublicDimensionType(OptionalLong.of(6000L), false, false, false, false,
                                                                               1.0D, false, false, false, false, true, 256,
                                                                               DefaultBiomeMagnifier.INSTANCE,
-                                                                              BlockTags.INFINIBURN_END.getId(),
+                                                                              BlockTags.INFINIBURN_END.getName(),
                                                                               DimensionType.THE_END_ID, 0.0F);
 
     @Nullable
