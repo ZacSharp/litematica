@@ -18,7 +18,7 @@ import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
 @Mixin(ClientPacketListener.class)
 public abstract class MixinClientPlayNetworkHandler
 {
-    @Inject(method = "onChunkData", at = @At("RETURN"))
+    @Inject(method = "handleLevelChunk", at = @At("RETURN"))
     private void onChunkData(ClientboundLevelChunkPacket packetIn, CallbackInfo ci)
     {
         if (Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
@@ -28,7 +28,7 @@ public abstract class MixinClientPlayNetworkHandler
         }
     }
 
-    @Inject(method = "onChunkDeltaUpdate", at = @At("RETURN"))
+    @Inject(method = "handleChunkBlocksUpdate", at = @At("RETURN"))
     private void onChunkDelta(ClientboundSectionBlocksUpdatePacket packet, CallbackInfo ci)
     {
         if (Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
@@ -40,7 +40,7 @@ public abstract class MixinClientPlayNetworkHandler
         }
     }
 
-    @Inject(method = "onUnloadChunk", at = @At("RETURN"))
+    @Inject(method = "handleForgetLevelChunk", at = @At("RETURN"))
     private void onChunkUnload(ClientboundForgetLevelChunkPacket packet, CallbackInfo ci)
     {
         if (Configs.Generic.LOAD_ENTIRE_SCHEMATICS.getBooleanValue() == false)
@@ -49,7 +49,7 @@ public abstract class MixinClientPlayNetworkHandler
         }
     }
 
-    @Inject(method = "onGameMessage", at = @At("RETURN"))
+    @Inject(method = "handleChat", at = @At("RETURN"))
     private void onGameMessage(ClientboundChatPacket packet, CallbackInfo ci)
     {
         DataManager.onChatMessage(packet.getMessage());

@@ -7,9 +7,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(AbstractContainerScreen.class)
 public interface IMixinHandledScreen
 {
-    @Accessor("x")
+    @Accessor("leftPos")
     int litematica_getX();
 
-    @Accessor("y")
+    @Accessor("topPos")
     int litematica_getY();
 }

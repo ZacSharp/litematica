@@ -11,6 +11,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(StairBlock.class)
 public interface IMixinStairsBlock
 {
-    @Invoker("getStairShape")
+    @Invoker("getStairsShape")
     public static StairsShape invokeGetStairShape(BlockState state, BlockGetter worldIn, BlockPos pos) { return null; }
 }

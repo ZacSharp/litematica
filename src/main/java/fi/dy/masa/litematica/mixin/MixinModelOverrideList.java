@@ -15,10 +15,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class MixinModelOverrideList
 {
     @SuppressWarnings("deprecation")
-    @Redirect(method = "apply", at = @At(value = "INVOKE",
-              target = "Lnet/minecraft/client/item/ModelPredicateProvider;call(" +
-                       "Lnet/minecraft/item/ItemStack;Lnet/minecraft/client/world/ClientWorld;" +
-                       "Lnet/minecraft/entity/LivingEntity;I)F"))
+    @Redirect(method = "resolve", at = @At(value = "INVOKE",
+              target = "Lnet/minecraft/client/renderer/item/ItemPropertyFunction;call(" +
+                       "Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/client/multiplayer/ClientLevel;" +
+                       "Lnet/minecraft/world/entity/LivingEntity;I)F"))
     private float fixCrashWithNullWorld(ItemPropertyFunction provider,
                                         ItemStack stack,
                                         @Nullable ClientLevel world,

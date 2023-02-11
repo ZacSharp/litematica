@@ -13,9 +13,9 @@ public abstract class MixinWorldChunk
 {
     @Redirect(method = "setBlockState",
                 slice = @Slice(from = @At(value = "INVOKE",
-                                target = "Lnet/minecraft/world/chunk/ChunkSection;getBlockState(III)" +
-                                          "Lnet/minecraft/block/BlockState;")),
-                at = @At(value = "FIELD", target = "Lnet/minecraft/world/World;isClient:Z", ordinal = 0))
+                                target = "Lnet/minecraft/world/level/chunk/LevelChunkSection;getBlockState(III)" +
+                                          "Lnet/minecraft/world/level/block/state/BlockState;")),
+                at = @At(value = "FIELD", target = "Lnet/minecraft/world/level/Level;isClientSide:Z", ordinal = 0))
     private boolean litematica_redirectIsRemote(Level world)
     {
         return WorldUtils.shouldPreventBlockUpdates(world) || world.isClientSide;

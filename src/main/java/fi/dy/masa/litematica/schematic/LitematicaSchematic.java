@@ -556,7 +556,7 @@ public class LitematicaSchematic
             net.minecraft.world.phys.AABB bb = PositionUtils.createEnclosingAABB(box.getPos1(), box.getPos2());
             BlockPos regionPosAbs = box.getPos1();
             List<EntityInfo> list = new ArrayList<>();
-            List<Entity> entities = world.getEntities(null, bb, EntityUtils.NOT_PLAYER);
+            List<Entity> entities = world.getEntities((Entity) null, bb, EntityUtils.NOT_PLAYER);
 
             for (Entity entity : entities)
             {
@@ -590,7 +590,7 @@ public class LitematicaSchematic
             }
 
             net.minecraft.world.phys.AABB bb = PositionUtils.createAABBFrom(entry.getValue());
-            List<Entity> entities = world.getEntities(null, bb, EntityUtils.NOT_PLAYER);
+            List<Entity> entities = world.getEntities((Entity) null, bb, EntityUtils.NOT_PLAYER);
             BlockPos regionPosAbs = box.getPos1();
 
             for (Entity entity : entities)

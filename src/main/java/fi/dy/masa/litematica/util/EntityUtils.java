@@ -244,7 +244,7 @@ public class EntityUtils
         BlockPos regionPosAbs = regionPosRelTransformed.offset(origin);
         AABB bb = PositionUtils.createEnclosingAABB(regionPosAbs, posEndAbs);
 
-        return world.getEntities(null, bb, EntityUtils.NOT_PLAYER);
+        return world.getEntities((Entity) null, bb, EntityUtils.NOT_PLAYER);
     }
 
     public static boolean shouldPickBlock(Player player)

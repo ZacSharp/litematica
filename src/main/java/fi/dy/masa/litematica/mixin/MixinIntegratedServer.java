@@ -29,8 +29,8 @@ public abstract class MixinIntegratedServer extends MinecraftServer
         super(thread, impl, session, saveProperties, resourcePackManager, proxy, dataFixer, serverResourceManager, minecraftSessionService, gameProfileRepository, userCache, worldGenerationProgressListenerFactory);
     }
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", shift = Shift.AFTER,
-            target = "Lnet/minecraft/server/MinecraftServer;tick(Ljava/util/function/BooleanSupplier;)V"))
+    @Inject(method = "tickServer", at = @At(value = "INVOKE", shift = Shift.AFTER,
+            target = "Lnet/minecraft/server/MinecraftServer;tickServer(Ljava/util/function/BooleanSupplier;)V"))
     private void onPostTick(BooleanSupplier supplier, CallbackInfo ci)
     {
         TaskScheduler.getInstanceServer().runTasks();

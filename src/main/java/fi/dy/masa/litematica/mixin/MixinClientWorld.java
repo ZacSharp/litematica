@@ -25,7 +25,7 @@ public abstract class MixinClientWorld extends Level
         super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
     }
 
-    @Inject(method = "setBlockStateWithoutNeighborUpdates", at = @At("HEAD"))
+    @Inject(method = "setKnownState", at = @At("HEAD"))
     private void onSetBlockStateWithoutNeighborUpdates(BlockPos pos, BlockState state, CallbackInfo ci)
     {
         SchematicVerifier.markVerifierBlockChanges(pos);

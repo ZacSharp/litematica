@@ -272,7 +272,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     protected void startSummoningEntities(IntBoundingBox box)
     {
         net.minecraft.world.phys.AABB bb = new net.minecraft.world.phys.AABB(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
-        this.entityIterator = this.schematicWorld.getEntities(null, bb, (e) -> true).iterator();
+        this.entityIterator = this.schematicWorld.getEntities((Entity) null, bb, (e) -> true).iterator();
         this.phase = TaskPhase.PROCESS_BOX_ENTITIES;
     }
 

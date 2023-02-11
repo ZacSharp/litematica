@@ -395,7 +395,7 @@ public class SchematicaSchematic
     private void readEntitiesFromWorld(Level world, BlockPos posStart, BlockPos size)
     {
         this.entities.clear();
-        List<Entity> entities = world.getEntities(null, new net.minecraft.world.phys.AABB(posStart, posStart.offset(size)), (e) -> (e instanceof Player) == false);
+        List<Entity> entities = world.getEntities((Entity) null, new net.minecraft.world.phys.AABB(posStart, posStart.offset(size)), (e) -> (e instanceof Player) == false);
 
         for (Entity entity : entities)
         {

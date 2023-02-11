@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 @Mixin({ RailBlock.class, DetectorRailBlock.class, PoweredRailBlock.class})
 public abstract class MixinRailBlocks extends BaseRailBlock
 {
-    protected MixinRailBlocks(boolean disableCorners, Block.Settings builder)
+    protected MixinRailBlocks(boolean disableCorners, Block.Properties builder)
     {
         super(disableCorners, builder);
     }

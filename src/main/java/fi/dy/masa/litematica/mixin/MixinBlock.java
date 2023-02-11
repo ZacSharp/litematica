@@ -14,7 +14,7 @@ import fi.dy.masa.litematica.util.WorldUtils;
 @Mixin(Block.class)
 public class MixinBlock
 {
-    @Inject(method = "dropStack(Lnet/minecraft/world/World;Ljava/util/function/Supplier;Lnet/minecraft/item/ItemStack;)V",
+    @Inject(method = "popResource(Lnet/minecraft/world/level/Level;Ljava/util/function/Supplier;Lnet/minecraft/world/item/ItemStack;)V",
             at = @At("HEAD"), cancellable = true)
     private static void litematica_preventItemDrops(Level world,
                                                     Supplier<ItemEntity> itemEntitySupplier,

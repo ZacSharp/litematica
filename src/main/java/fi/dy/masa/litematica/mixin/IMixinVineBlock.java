@@ -10,6 +10,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(VineBlock.class)
 public interface IMixinVineBlock
 {
-    @Invoker("shouldHaveSide")
+    @Invoker("canSupportAtFace")
     boolean invokeShouldConnectUp(BlockGetter blockReader, BlockPos pos, Direction side);
 }

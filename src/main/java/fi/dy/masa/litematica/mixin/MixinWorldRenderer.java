@@ -14,19 +14,19 @@ import net.minecraft.client.renderer.RenderType;
 public abstract class MixinWorldRenderer
 {
     @Shadow
-    private net.minecraft.client.multiplayer.ClientLevel world;
+    private net.minecraft.client.multiplayer.ClientLevel level;
 
-    @Inject(method = "reload()V", at = @At("RETURN"))
+    @Inject(method = "allChanged()V", at = @At("RETURN"))
     private void onLoadRenderers(CallbackInfo ci)
     {
         // Also (re-)load our renderer when the vanilla renderer gets reloaded
-        if (this.world != null && this.world == net.minecraft.client.Minecraft.getInstance().level)
+        if (this.level != null && this.level == net.minecraft.client.Minecraft.getInstance().level)
         {
             LitematicaRenderer.getInstance().loadRenderers();
         }
     }
 
-    @Inject(method = "setupTerrain", at = @At("TAIL"))
+    @Inject(method = "setupRender", at = @At("TAIL"))
     private void onPostSetupTerrain(
             net.minecraft.client.Camera camera,
             net.minecraft.client.renderer.culling.Frustum frustum,
@@ -35,7 +35,7 @@ public abstract class MixinWorldRenderer
         LitematicaRenderer.getInstance().piecewisePrepareAndUpdate(frustum);
     }
 
-    @Inject(method = "renderLayer", at = @At("TAIL"))
+    @Inject(method = "renderChunkLayer", at = @At("TAIL"))
     private void onRenderLayer(RenderType renderLayer, PoseStack matrixStack, double x, double y, double z, Matrix4f matrix4f, CallbackInfo ci)
     {
         if (renderLayer == RenderType.solid())
@@ -57,9 +57,9 @@ public abstract class MixinWorldRenderer
         }
     }
 
-    @Inject(method = "render",
+    @Inject(method = "renderLevel",
             at = @At(value = "INVOKE_STRING", args = "ldc=blockentities",
-                     target = "Lnet/minecraft/util/profiler/Profiler;swap(Ljava/lang/String;)V"))
+                     target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V"))
     private void onPostRenderEntities(
             com.mojang.blaze3d.vertex.PoseStack matrices,
             float tickDelta, long limitTime, boolean renderBlockOutline,
@@ -73,7 +73,7 @@ public abstract class MixinWorldRenderer
     }
 
     /*
-    @Inject(method = "render", at = @At("TAIL"))
+    @Inject(method = "renderLevel", at = @At("TAIL"))
     private void onRenderWorldLast(
             net.minecraft.client.util.math.MatrixStack matrices,
             float tickDelta, long limitTime, boolean renderBlockOutline,
