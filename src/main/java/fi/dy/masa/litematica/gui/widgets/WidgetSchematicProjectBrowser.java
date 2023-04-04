@@ -3,6 +3,8 @@ package fi.dy.masa.litematica.gui.widgets;
 import java.io.File;
 import java.io.FileFilter;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.gui.Icons;
 import fi.dy.masa.litematica.schematic.projects.SchematicProject;
@@ -13,8 +15,6 @@ import fi.dy.masa.malilib.gui.widgets.WidgetFileBrowserBase;
 import fi.dy.masa.malilib.gui.widgets.WidgetFileBrowserBase.DirectoryEntry;
 import fi.dy.masa.malilib.render.RenderUtils;
 import fi.dy.masa.malilib.util.StringUtils;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
 
 public class WidgetSchematicProjectBrowser extends WidgetFileBrowserBase implements ISelectionListener<DirectoryEntry>
 {
@@ -70,7 +70,7 @@ public class WidgetSchematicProjectBrowser extends WidgetFileBrowserBase impleme
     }
 
     @Override
-    protected void drawAdditionalContents(int mouseX, int mouseY, MatrixStack matrixStack)
+    protected void drawAdditionalContents(int mouseX, int mouseY, PoseStack matrixStack)
     {
         int x = this.posX + this.totalWidth - this.infoWidth + 4;
         int y = this.posY + 4;

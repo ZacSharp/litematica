@@ -4,22 +4,22 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.network.packet.s2c.play.ChunkDataS2CPacket;
-import net.minecraft.network.packet.s2c.play.ChunkDeltaUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
-import net.minecraft.network.packet.s2c.play.UnloadChunkS2CPacket;
-import net.minecraft.util.math.ChunkSectionPos;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.verifier.SchematicVerifier;
 import fi.dy.masa.litematica.util.SchematicWorldRefresher;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.core.SectionPos;
+import net.minecraft.network.protocol.game.ClientboundChatPacket;
+import net.minecraft.network.protocol.game.ClientboundForgetLevelChunkPacket;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkPacket;
+import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
 
-@Mixin(ClientPlayNetworkHandler.class)
+@Mixin(ClientPacketListener.class)
 public abstract class MixinClientPlayNetworkHandler
 {
     @Inject(method = "onChunkData", at = @At("RETURN"))
-    private void onChunkData(ChunkDataS2CPacket packetIn, CallbackInfo ci)
+    private void onChunkData(ClientboundLevelChunkPacket packetIn, CallbackInfo ci)
     {
         if (Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
             Configs.Visuals.ENABLE_SCHEMATIC_RENDERING.getBooleanValue())
@@ -29,19 +29,19 @@ public abstract class MixinClientPlayNetworkHandler
     }
 
     @Inject(method = "onChunkDeltaUpdate", at = @At("RETURN"))
-    private void onChunkDelta(ChunkDeltaUpdateS2CPacket packet, CallbackInfo ci)
+    private void onChunkDelta(ClientboundSectionBlocksUpdatePacket packet, CallbackInfo ci)
     {
         if (Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
             Configs.Visuals.ENABLE_SCHEMATIC_RENDERING.getBooleanValue())
         {
-            ChunkSectionPos pos = ((IMixinChunkDeltaUpdateS2CPacket) packet).litematica_getSection();
+            SectionPos pos = ((IMixinChunkDeltaUpdateS2CPacket) packet).litematica_getSection();
             SchematicWorldRefresher.INSTANCE.markSchematicChunksForRenderUpdate(pos.getX(), pos.getY(), pos.getZ());
-            packet.visitUpdates((p, s) -> SchematicVerifier.markVerifierBlockChanges(p));
+            packet.runUpdates((p, s) -> SchematicVerifier.markVerifierBlockChanges(p));
         }
     }
 
     @Inject(method = "onUnloadChunk", at = @At("RETURN"))
-    private void onChunkUnload(UnloadChunkS2CPacket packet, CallbackInfo ci)
+    private void onChunkUnload(ClientboundForgetLevelChunkPacket packet, CallbackInfo ci)
     {
         if (Configs.Generic.LOAD_ENTIRE_SCHEMATICS.getBooleanValue() == false)
         {
@@ -50,7 +50,7 @@ public abstract class MixinClientPlayNetworkHandler
     }
 
     @Inject(method = "onGameMessage", at = @At("RETURN"))
-    private void onGameMessage(GameMessageS2CPacket packet, CallbackInfo ci)
+    private void onGameMessage(ClientboundChatPacket packet, CallbackInfo ci)
     {
         DataManager.onChatMessage(packet.getMessage());
     }

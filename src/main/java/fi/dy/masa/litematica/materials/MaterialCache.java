@@ -7,28 +7,28 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 import com.google.common.collect.ImmutableList;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.FlowerPotBlock;
-import net.minecraft.block.FluidBlock;
-import net.minecraft.block.SlabBlock;
-import net.minecraft.block.SnowBlock;
-import net.minecraft.block.TallPlantBlock;
-import net.minecraft.block.enums.BedPart;
-import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.block.enums.SlabType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtHelper;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.World;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.litematica.Reference;
 import fi.dy.masa.litematica.util.WorldUtils;
@@ -76,7 +76,7 @@ public class MaterialCache
         return this.getRequiredBuildItemForState(state, this.tempWorld, this.checkPos);
     }
 
-    public ItemStack getRequiredBuildItemForState(BlockState state, World world, BlockPos pos)
+    public ItemStack getRequiredBuildItemForState(BlockState state, Level world, BlockPos pos)
     {
         ItemStack stack = this.buildItemsForStates.get(state);
 
@@ -100,14 +100,14 @@ public class MaterialCache
         return stack;
     }
 
-    protected ItemStack getItemForStateFromWorld(BlockState state, World world, BlockPos pos, boolean isBuildItem)
+    protected ItemStack getItemForStateFromWorld(BlockState state, Level world, BlockPos pos, boolean isBuildItem)
     {
         ItemStack stack = isBuildItem ? this.getStateToItemOverride(state) : null;
 
         if (stack == null)
         {
-            world.setBlockState(pos, state, 0x14);
-            stack = state.getBlock().getPickStack(world, pos, state);
+            world.setBlock(pos, state, 0x14);
+            stack = state.getBlock().getCloneItemStack(world, pos, state);
         }
 
         if (stack == null || stack.isEmpty())
@@ -150,13 +150,13 @@ public class MaterialCache
         return this.getItems(state, this.tempWorld, this.checkPos);
     }
 
-    public ImmutableList<ItemStack> getItems(BlockState state, World world, BlockPos pos)
+    public ImmutableList<ItemStack> getItems(BlockState state, Level world, BlockPos pos)
     {
         Block block = state.getBlock();
 
         if (block instanceof FlowerPotBlock && block != Blocks.FLOWER_POT)
         {
-            return ImmutableList.of(new ItemStack(Blocks.FLOWER_POT), block.getPickStack(world, pos, state));
+            return ImmutableList.of(new ItemStack(Blocks.FLOWER_POT), block.getCloneItemStack(world, pos, state));
         }
 
         return ImmutableList.of(this.getRequiredBuildItemForState(state, world, pos));
@@ -189,7 +189,7 @@ public class MaterialCache
         }
         else if (block == Blocks.LAVA)
         {
-            if (state.get(FluidBlock.LEVEL) == 0)
+            if (state.getValue(LiquidBlock.LEVEL) == 0)
             {
                 return new ItemStack(Items.LAVA_BUCKET);
             }
@@ -200,7 +200,7 @@ public class MaterialCache
         }
         else if (block == Blocks.WATER)
         {
-            if (state.get(FluidBlock.LEVEL) == 0)
+            if (state.getValue(LiquidBlock.LEVEL) == 0)
             {
                 return new ItemStack(Items.WATER_BUCKET);
             }
@@ -209,15 +209,15 @@ public class MaterialCache
                 return ItemStack.EMPTY;
             }
         }
-        else if (block instanceof DoorBlock && state.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER)
+        else if (block instanceof DoorBlock && state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER)
         {
             return ItemStack.EMPTY;
         }
-        else if (block instanceof BedBlock && state.get(BedBlock.PART) == BedPart.HEAD)
+        else if (block instanceof BedBlock && state.getValue(BedBlock.PART) == BedPart.HEAD)
         {
             return ItemStack.EMPTY;
         }
-        else if (block instanceof TallPlantBlock && state.get(TallPlantBlock.HALF) == DoubleBlockHalf.UPPER)
+        else if (block instanceof DoublePlantBlock && state.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.UPPER)
         {
             return ItemStack.EMPTY;
         }
@@ -227,19 +227,19 @@ public class MaterialCache
 
     protected void overrideStackSize(BlockState state, ItemStack stack)
     {
-        if (state.getBlock() instanceof SlabBlock && state.get(SlabBlock.TYPE) == SlabType.DOUBLE)
+        if (state.getBlock() instanceof SlabBlock && state.getValue(SlabBlock.TYPE) == SlabType.DOUBLE)
         {
             stack.setCount(2);
         }
         else if (state.getBlock() == Blocks.SNOW)
         {
-            stack.setCount(state.get(SnowBlock.LAYERS));
+            stack.setCount(state.getValue(SnowLayerBlock.LAYERS));
         }
     }
 
-    protected NbtCompound writeToNBT()
+    protected CompoundTag writeToNBT()
     {
-        NbtCompound nbt = new NbtCompound();
+        CompoundTag nbt = new CompoundTag();
 
         nbt.put("MaterialCache", this.writeMapToNBT(this.buildItemsForStates));
         nbt.put("DisplayMaterialCache", this.writeMapToNBT(this.displayItemsForStates));
@@ -247,17 +247,17 @@ public class MaterialCache
         return nbt;
     }
 
-    protected NbtList writeMapToNBT(IdentityHashMap<BlockState, ItemStack> map)
+    protected ListTag writeMapToNBT(IdentityHashMap<BlockState, ItemStack> map)
     {
-        NbtList list = new NbtList();
+        ListTag list = new ListTag();
 
         for (Map.Entry<BlockState, ItemStack> entry : map.entrySet())
         {
-            NbtCompound tag = new NbtCompound();
-            NbtCompound stateTag = NbtHelper.fromBlockState(entry.getKey());
+            CompoundTag tag = new CompoundTag();
+            CompoundTag stateTag = NbtUtils.writeBlockState(entry.getKey());
 
             tag.put("Block", stateTag);
-            tag.put("Item", entry.getValue().writeNbt(new NbtCompound()));
+            tag.put("Item", entry.getValue().save(new CompoundTag()));
 
             list.add(tag);
         }
@@ -265,7 +265,7 @@ public class MaterialCache
         return list;
     }
 
-    protected void readFromNBT(NbtCompound nbt)
+    protected void readFromNBT(CompoundTag nbt)
     {
         this.buildItemsForStates.clear();
         this.displayItemsForStates.clear();
@@ -274,25 +274,25 @@ public class MaterialCache
         this.readMapFromNBT(nbt, "DisplayMaterialCache", this.displayItemsForStates);
     }
 
-    protected void readMapFromNBT(NbtCompound nbt, String tagName, IdentityHashMap<BlockState, ItemStack> map)
+    protected void readMapFromNBT(CompoundTag nbt, String tagName, IdentityHashMap<BlockState, ItemStack> map)
     {
         if (nbt.contains(tagName, Constants.NBT.TAG_LIST))
         {
-            NbtList list = nbt.getList(tagName, Constants.NBT.TAG_COMPOUND);
+            ListTag list = nbt.getList(tagName, Constants.NBT.TAG_COMPOUND);
             final int count = list.size();
 
             for (int i = 0; i < count; ++i)
             {
-                NbtCompound tag = list.getCompound(i);
+                CompoundTag tag = list.getCompound(i);
 
                 if (tag.contains("Block", Constants.NBT.TAG_COMPOUND) &&
                     tag.contains("Item", Constants.NBT.TAG_COMPOUND))
                 {
-                    BlockState state = NbtHelper.toBlockState(tag.getCompound("Block"));
+                    BlockState state = NbtUtils.readBlockState(tag.getCompound("Block"));
 
                     if (state != null)
                     {
-                        ItemStack stack = ItemStack.fromNbt(tag.getCompound("Item"));
+                        ItemStack stack = ItemStack.of(tag.getCompound("Item"));
                         this.buildItemsForStates.put(state, stack);
                     }
                 }
@@ -355,7 +355,7 @@ public class MaterialCache
         try
         {
             FileInputStream is = new FileInputStream(file);
-            NbtCompound nbt = NbtIo.readCompressed(is);
+            CompoundTag nbt = NbtIo.readCompressed(is);
             is.close();
 
             if (nbt != null)

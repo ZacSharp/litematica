@@ -3,7 +3,7 @@ package fi.dy.masa.litematica.gui;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.config.Hotkeys;
 import fi.dy.masa.litematica.data.DataManager;
@@ -106,8 +106,8 @@ public class GuiAreaSelectionEditorNormal extends GuiListBase<String, WidgetSele
         y += 13;
 
         int width = 202;
-        this.textFieldSelectionName = new GuiTextFieldGeneric(x, y + 2, width, 16, this.textRenderer);
-        this.textFieldSelectionName.setText(this.selection.getName());
+        this.textFieldSelectionName = new GuiTextFieldGeneric(x, y + 2, width, 16, this.font);
+        this.textFieldSelectionName.setValue(this.selection.getName());
         this.addTextField(this.textFieldSelectionName, new TextFieldListenerDummy());
         x += width + 4;
         x += this.createButton(x, y, -1, ButtonListener.Type.SET_SELECTION_NAME) + 10;
@@ -267,9 +267,9 @@ public class GuiAreaSelectionEditorNormal extends GuiListBase<String, WidgetSele
                 break;
         }
 
-        GuiTextFieldInteger textField = new GuiTextFieldInteger(x + offset, y, width, 16, this.textRenderer);
+        GuiTextFieldInteger textField = new GuiTextFieldInteger(x + offset, y, width, 16, this.font);
         TextFieldListener listener = new TextFieldListener(coordType, corner, this);
-        textField.setText(text);
+        textField.setValue(text);
         this.addTextField(textField, listener);
 
         this.createCoordinateButton(x + offset + width + 4, y, corner, coordType, type);
@@ -392,7 +392,7 @@ public class GuiAreaSelectionEditorNormal extends GuiListBase<String, WidgetSele
 
     protected void renameSelection()
     {
-        String newName = this.textFieldSelectionName.getText();
+        String newName = this.textFieldSelectionName.getValue();
 
         if (DataManager.getSchematicProjectsManager().hasProjectOpen())
         {
@@ -598,7 +598,7 @@ public class GuiAreaSelectionEditorNormal extends GuiListBase<String, WidgetSele
         @Override
         public boolean onTextChange(GuiTextFieldGeneric textField)
         {
-            this.parent.updatePosition(textField.getText(), this.corner, this.type);
+            this.parent.updatePosition(textField.getValue(), this.corner, this.type);
             return false;
         }
     }

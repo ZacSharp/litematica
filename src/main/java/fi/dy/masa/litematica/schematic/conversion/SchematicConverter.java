@@ -6,40 +6,40 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
-import net.minecraft.block.BannerBlock;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.ChorusPlantBlock;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.FenceBlock;
-import net.minecraft.block.FenceGateBlock;
-import net.minecraft.block.FireBlock;
-import net.minecraft.block.FlowerPotBlock;
-import net.minecraft.block.GrassBlock;
-import net.minecraft.block.MyceliumBlock;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.block.PaneBlock;
-import net.minecraft.block.RedstoneWireBlock;
-import net.minecraft.block.RepeaterBlock;
-import net.minecraft.block.SkullBlock;
-import net.minecraft.block.SnowyBlock;
-import net.minecraft.block.StainedGlassPaneBlock;
-import net.minecraft.block.StairsBlock;
-import net.minecraft.block.StemBlock;
-import net.minecraft.block.TallFlowerBlock;
-import net.minecraft.block.TallPlantBlock;
-import net.minecraft.block.TripwireBlock;
-import net.minecraft.block.VineBlock;
-import net.minecraft.block.WallBannerBlock;
-import net.minecraft.block.WallBlock;
-import net.minecraft.block.WallSkullBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.BannerBlock;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChorusPlantBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraft.world.level.block.GrassBlock;
+import net.minecraft.world.level.block.IronBarsBlock;
+import net.minecraft.world.level.block.MyceliumBlock;
+import net.minecraft.world.level.block.NoteBlock;
+import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.RepeaterBlock;
+import net.minecraft.world.level.block.SkullBlock;
+import net.minecraft.world.level.block.SnowyDirtBlock;
+import net.minecraft.world.level.block.StainedGlassPaneBlock;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.StemBlock;
+import net.minecraft.world.level.block.TallFlowerBlock;
+import net.minecraft.world.level.block.TripWireBlock;
+import net.minecraft.world.level.block.VineBlock;
+import net.minecraft.world.level.block.WallBannerBlock;
+import net.minecraft.world.level.block.WallBlock;
+import net.minecraft.world.level.block.WallSkullBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import fi.dy.masa.litematica.schematic.container.LitematicaBlockStateContainer;
 import fi.dy.masa.litematica.schematic.conversion.SchematicConversionFixers.IStateFixer;
 import fi.dy.masa.malilib.gui.Message.MessageType;
@@ -115,7 +115,7 @@ public class SchematicConverter
     public BlockState[] getBlockStatePaletteForBlockPalette(String[] blockPalette)
     {
         BlockState[] palette = new BlockState[blockPalette.length * 16];
-        Arrays.fill(palette, Blocks.AIR.getDefaultState());
+        Arrays.fill(palette, Blocks.AIR.defaultBlockState());
 
         for (int schematicBlockId = 0; schematicBlockId < blockPalette.length; ++schematicBlockId)
         {
@@ -177,7 +177,7 @@ public class SchematicConverter
         return this.fixersPerBlock.get(state.getBlock().getClass());
     }
 
-    public NbtCompound fixTileEntityNBT(NbtCompound tag, BlockState state)
+    public CompoundTag fixTileEntityNBT(CompoundTag tag, BlockState state)
     {
         /*
         try
@@ -194,14 +194,14 @@ public class SchematicConverter
         return tag;
     }
 
-    public static void postProcessBlocks(LitematicaBlockStateContainer container, @Nullable Map<BlockPos, NbtCompound> tiles,
+    public static void postProcessBlocks(LitematicaBlockStateContainer container, @Nullable Map<BlockPos, CompoundTag> tiles,
                                          IdentityHashMap<BlockState, IStateFixer> postProcessingFilter)
     {
         final int sizeX = container.getSize().getX();
         final int sizeY = container.getSize().getY();
         final int sizeZ = container.getSize().getZ();
         BlockReaderLitematicaContainer reader = new BlockReaderLitematicaContainer(container, tiles);
-        BlockPos.Mutable posMutable = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos posMutable = new BlockPos.MutableBlockPos();
 
         for (int y = 0; y < sizeY; ++y)
         {
@@ -230,7 +230,7 @@ public class SchematicConverter
     private void addPostUpdateBlocksLitematica()
     {
         // Fixers to fix the state according to the adjacent blocks
-        this.fixersPerBlock.put(RedstoneWireBlock.class,            SchematicConversionFixers.FIXER_REDSTONE_WIRE);
+        this.fixersPerBlock.put(RedStoneWireBlock.class,            SchematicConversionFixers.FIXER_REDSTONE_WIRE);
         this.fixersPerBlock.put(WallBlock.class,                    WallStateFixer.INSTANCE);
 
         // Fixers to get values from old TileEntity data
@@ -253,16 +253,16 @@ public class SchematicConverter
         this.fixersPerBlock.put(FireBlock.class,                    SchematicConversionFixers.FIXER_FIRE);
         this.fixersPerBlock.put(GrassBlock.class,                   SchematicConversionFixers.FIXER_DIRT_SNOWY);
         this.fixersPerBlock.put(MyceliumBlock.class,                SchematicConversionFixers.FIXER_DIRT_SNOWY);
-        this.fixersPerBlock.put(PaneBlock.class,                    SchematicConversionFixers.FIXER_PANE); // Iron Bars & Glass Pane
+        this.fixersPerBlock.put(IronBarsBlock.class,                    SchematicConversionFixers.FIXER_PANE); // Iron Bars & Glass Pane
         this.fixersPerBlock.put(RepeaterBlock.class,                SchematicConversionFixers.FIXER_REDSTONE_REPEATER);
-        this.fixersPerBlock.put(RedstoneWireBlock.class,            SchematicConversionFixers.FIXER_REDSTONE_WIRE);
-        this.fixersPerBlock.put(SnowyBlock.class,                   SchematicConversionFixers.FIXER_DIRT_SNOWY); // Podzol
+        this.fixersPerBlock.put(RedStoneWireBlock.class,            SchematicConversionFixers.FIXER_REDSTONE_WIRE);
+        this.fixersPerBlock.put(SnowyDirtBlock.class,                   SchematicConversionFixers.FIXER_DIRT_SNOWY); // Podzol
         this.fixersPerBlock.put(StemBlock.class,                    SchematicConversionFixers.FIXER_STEM);
         this.fixersPerBlock.put(StainedGlassPaneBlock.class,        SchematicConversionFixers.FIXER_PANE);
-        this.fixersPerBlock.put(StairsBlock.class,                  SchematicConversionFixers.FIXER_STAIRS);
+        this.fixersPerBlock.put(StairBlock.class,                  SchematicConversionFixers.FIXER_STAIRS);
         this.fixersPerBlock.put(TallFlowerBlock.class,              SchematicConversionFixers.FIXER_DOUBLE_PLANT);
-        this.fixersPerBlock.put(TallPlantBlock.class,               SchematicConversionFixers.FIXER_DOUBLE_PLANT);
-        this.fixersPerBlock.put(TripwireBlock.class,                SchematicConversionFixers.FIXER_TRIPWIRE);
+        this.fixersPerBlock.put(DoublePlantBlock.class,               SchematicConversionFixers.FIXER_DOUBLE_PLANT);
+        this.fixersPerBlock.put(TripWireBlock.class,                SchematicConversionFixers.FIXER_TRIPWIRE);
         this.fixersPerBlock.put(VineBlock.class,                    SchematicConversionFixers.FIXER_VINE);
         this.fixersPerBlock.put(WallBlock.class,                    WallStateFixer.INSTANCE);
 
@@ -279,16 +279,16 @@ public class SchematicConverter
     public static class BlockReaderLitematicaContainer implements IBlockReaderWithData
     {
         private final LitematicaBlockStateContainer container;
-        private final Map<BlockPos, NbtCompound> blockEntityData;
+        private final Map<BlockPos, CompoundTag> blockEntityData;
         private final Vec3i size;
         private final BlockState air;
 
-        public BlockReaderLitematicaContainer(LitematicaBlockStateContainer container, @Nullable Map<BlockPos, NbtCompound> blockEntityData)
+        public BlockReaderLitematicaContainer(LitematicaBlockStateContainer container, @Nullable Map<BlockPos, CompoundTag> blockEntityData)
         {
             this.container = container;
             this.blockEntityData = blockEntityData != null ? blockEntityData : new HashMap<>();
             this.size = container.getSize();
-            this.air = Blocks.AIR.getDefaultState();
+            this.air = Blocks.AIR.defaultBlockState();
         }
 
         @Override
@@ -320,7 +320,7 @@ public class SchematicConverter
 
         @Override
         @Nullable
-        public NbtCompound getBlockEntityData(BlockPos pos)
+        public CompoundTag getBlockEntityData(BlockPos pos)
         {
             return this.blockEntityData.get(pos);
         }

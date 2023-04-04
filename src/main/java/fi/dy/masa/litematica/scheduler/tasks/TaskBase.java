@@ -5,11 +5,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.render.infohud.IInfoHudRenderer;
 import fi.dy.masa.litematica.render.infohud.RenderPhase;
@@ -25,7 +25,7 @@ public abstract class TaskBase implements ITask, IInfoHudRenderer
 {
     private TaskTimer timer = new TaskTimer(1);
 
-    protected final MinecraftClient mc;
+    protected final Minecraft mc;
     protected String name = "";
     protected List<String> infoHudLines = new ArrayList<>();
     protected boolean finished;
@@ -34,7 +34,7 @@ public abstract class TaskBase implements ITask, IInfoHudRenderer
 
     protected TaskBase()
     {
-        this.mc = MinecraftClient.getInstance();
+        this.mc = Minecraft.getInstance();
     }
 
     @Override
@@ -68,7 +68,7 @@ public abstract class TaskBase implements ITask, IInfoHudRenderer
     @Override
     public boolean canExecute()
     {
-        return this.mc.world != null;
+        return this.mc.level != null;
     }
 
     @Override
@@ -106,7 +106,7 @@ public abstract class TaskBase implements ITask, IInfoHudRenderer
         }
     }
 
-    protected boolean areSurroundingChunksLoaded(ChunkPos pos, ClientWorld world, int radius)
+    protected boolean areSurroundingChunksLoaded(ChunkPos pos, ClientLevel world, int radius)
     {
         if (radius <= 0)
         {
@@ -133,13 +133,13 @@ public abstract class TaskBase implements ITask, IInfoHudRenderer
     protected void updateInfoHudLinesMissingChunks(Set<ChunkPos> requiredChunks)
     {
         List<String> hudLines = new ArrayList<>();
-        PlayerEntity player = this.mc.player;
+        Player player = this.mc.player;
 
         if (player != null && requiredChunks.isEmpty() == false)
         {
             List<ChunkPos> list = new ArrayList<>();
             list.addAll(requiredChunks);
-            PositionUtils.CHUNK_POS_COMPARATOR.setReferencePosition(new BlockPos(player.getPos()));
+            PositionUtils.CHUNK_POS_COMPARATOR.setReferencePosition(new BlockPos(player.position()));
             PositionUtils.CHUNK_POS_COMPARATOR.setClosestFirst(true);
             Collections.sort(list, PositionUtils.CHUNK_POS_COMPARATOR);
 

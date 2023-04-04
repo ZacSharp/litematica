@@ -1,6 +1,6 @@
 package fi.dy.masa.litematica.selection;
 
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
 
 public class BoxSliced extends Box
 {

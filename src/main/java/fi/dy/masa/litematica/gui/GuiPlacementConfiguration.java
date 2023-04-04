@@ -1,6 +1,10 @@
 package fi.dy.masa.litematica.gui;
 
 import javax.annotation.Nullable;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.gui.GuiMainMenu.ButtonListenerChangeMenu;
 import fi.dy.masa.litematica.gui.widgets.WidgetListPlacementSubRegions;
@@ -24,10 +28,6 @@ import fi.dy.masa.malilib.gui.widgets.WidgetCheckBox;
 import fi.dy.masa.malilib.util.GuiUtils;
 import fi.dy.masa.malilib.util.PositionUtils.CoordinateType;
 import fi.dy.masa.malilib.util.StringUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.math.BlockPos;
 
 public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, WidgetPlacementSubRegion, WidgetListPlacementSubRegions>
                                         implements ISelectionListener<SubRegionPlacement>
@@ -65,9 +65,9 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
         int x = 12;
         int y = 22;
 
-        this.textFieldRename = new GuiTextFieldGeneric(x, y + 2, width, 16, this.textRenderer);
+        this.textFieldRename = new GuiTextFieldGeneric(x, y + 2, width, 16, this.font);
         this.textFieldRename.setMaxLength(256);
-        this.textFieldRename.setText(this.placement.getName());
+        this.textFieldRename.setValue(this.placement.getName());
         this.addTextField(this.textFieldRename, null);
         this.createButton(x + width + 4, y, -1, ButtonListener.Type.RENAME_PLACEMENT);
 
@@ -175,8 +175,8 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
             case Z: text = String.valueOf(pos.getZ()); break;
         }
 
-        GuiTextFieldInteger textField = new GuiTextFieldInteger(x + offset, y + 2, width, 14, this.textRenderer);
-        textField.setText(text);
+        GuiTextFieldInteger textField = new GuiTextFieldInteger(x + offset, y + 2, width, 14, this.font);
+        textField.setValue(text);
         TextFieldListener listener = new TextFieldListener(type, this.placement, this);
         this.addTextField(textField, listener);
 
@@ -342,7 +342,7 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
         @Override
         public void actionPerformedWithButton(ButtonBase button, int mouseButton)
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             int amount = mouseButton == 1 ? -1 : 1;
             if (GuiBase.isShiftDown()) { amount *= 8; }
             if (GuiBase.isAltDown()) { amount *= 4; }
@@ -352,13 +352,13 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
             switch (this.type)
             {
                 case RENAME_PLACEMENT:
-                    this.placement.setName(this.parent.textFieldRename.getText());
+                    this.placement.setName(this.parent.textFieldRename.getValue());
                     break;
 
                 case ROTATE:
                 {
                     boolean reverse = mouseButton == 1;
-                    BlockRotation rotation = PositionUtils.cycleRotation(this.placement.getRotation(), reverse);
+                    Rotation rotation = PositionUtils.cycleRotation(this.placement.getRotation(), reverse);
                     this.placement.setRotation(rotation, this.parent);
                     break;
                 }
@@ -366,28 +366,28 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
                 case MIRROR:
                 {
                     boolean reverse = mouseButton == 1;
-                    BlockMirror mirror = PositionUtils.cycleMirror(this.placement.getMirror(), reverse);
+                    Mirror mirror = PositionUtils.cycleMirror(this.placement.getMirror(), reverse);
                     this.placement.setMirror(mirror, this.parent);
                     break;
                 }
 
                 case MOVE_TO_PLAYER:
                 {
-                    BlockPos pos = new BlockPos(mc.player.getPos());
+                    BlockPos pos = new BlockPos(mc.player.position());
                     this.placement.setOrigin(pos, this.parent);
                     break;
                 }
 
                 case NUDGE_COORD_X:
-                    this.placement.setOrigin(oldOrigin.add(amount, 0, 0), this.parent);
+                    this.placement.setOrigin(oldOrigin.offset(amount, 0, 0), this.parent);
                     break;
 
                 case NUDGE_COORD_Y:
-                    this.placement.setOrigin(oldOrigin.add(0, amount, 0), this.parent);
+                    this.placement.setOrigin(oldOrigin.offset(0, amount, 0), this.parent);
                     break;
 
                 case NUDGE_COORD_Z:
-                    this.placement.setOrigin(oldOrigin.add(0, 0, amount), this.parent);
+                    this.placement.setOrigin(oldOrigin.offset(0, 0, amount), this.parent);
                     break;
 
                 case TOGGLE_ENABLED:
@@ -514,7 +514,7 @@ public class GuiPlacementConfiguration  extends GuiListBase<SubRegionPlacement, 
         {
             try
             {
-                int value = Integer.parseInt(textField.getText());
+                int value = Integer.parseInt(textField.getValue());
                 BlockPos posOld = this.placement.getOrigin();
                 this.parent.setNextMessageType(MessageType.ERROR);
 

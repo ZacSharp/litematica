@@ -3,11 +3,11 @@ package fi.dy.masa.litematica.materials;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.container.LitematicaBlockStateContainer;
 import fi.dy.masa.malilib.util.InventoryUtils;
@@ -50,7 +50,7 @@ public class MaterialListUtils
             }
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         return getMaterialList(countsTotal, countsTotal, new Object2IntOpenHashMap<>(), mc.player);
     }
@@ -59,7 +59,7 @@ public class MaterialListUtils
             Object2IntOpenHashMap<BlockState> countsTotal,
             Object2IntOpenHashMap<BlockState> countsMissing,
             Object2IntOpenHashMap<BlockState> countsMismatch,
-            PlayerEntity player)
+            Player player)
     {
         List<MaterialListEntry> list = new ArrayList<>();
 
@@ -118,7 +118,7 @@ public class MaterialListUtils
         }
     }
 
-    public static void updateAvailableCounts(List<MaterialListEntry> list, PlayerEntity player)
+    public static void updateAvailableCounts(List<MaterialListEntry> list, Player player)
     {
         Object2IntOpenHashMap<ItemType> playerInvItems = InventoryUtils.getInventoryItemCounts(player.getInventory());
 

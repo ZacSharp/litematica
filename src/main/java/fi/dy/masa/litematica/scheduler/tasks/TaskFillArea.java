@@ -2,15 +2,15 @@ package fi.dy.masa.litematica.scheduler.tasks;
 
 import java.util.List;
 import javax.annotation.Nullable;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.command.argument.BlockArgumentParser;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.commands.arguments.blocks.BlockStateParser;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import fi.dy.masa.litematica.render.infohud.InfoHud;
 import fi.dy.masa.litematica.selection.Box;
 import fi.dy.masa.litematica.util.EntityUtils;
@@ -40,11 +40,11 @@ public class TaskFillArea extends TaskProcessChunkBase
         this.replaceState = replaceState;
         this.removeEntities = removeEntities;
 
-        String blockString = BlockArgumentParser.stringifyBlockState(fillState);
+        String blockString = BlockStateParser.serialize(fillState);
 
         if (replaceState != null)
         {
-            blockString += " replace " + BlockArgumentParser.stringifyBlockState(replaceState);
+            blockString += " replace " + BlockStateParser.serialize(replaceState);
         }
 
         this.blockString = blockString;
@@ -89,12 +89,12 @@ public class TaskFillArea extends TaskProcessChunkBase
     {
         if (removeEntities)
         {
-            net.minecraft.util.math.Box aabb = new net.minecraft.util.math.Box(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
-            List<Entity> entities = this.world.getOtherEntities(this.mc.player, aabb, EntityUtils.NOT_PLAYER);
+            net.minecraft.world.phys.AABB aabb = new net.minecraft.world.phys.AABB(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
+            List<Entity> entities = this.world.getEntities(this.mc.player, aabb, EntityUtils.NOT_PLAYER);
 
             for (Entity entity : entities)
             {
-                if ((entity instanceof PlayerEntity) == false)
+                if ((entity instanceof Player) == false)
                 {
                     entity.discard();
                 }
@@ -103,8 +103,8 @@ public class TaskFillArea extends TaskProcessChunkBase
 
         WorldUtils.setShouldPreventBlockUpdates(this.world, true);
 
-        BlockState barrier = Blocks.BARRIER.getDefaultState();
-        BlockPos.Mutable posMutable = new BlockPos.Mutable();
+        BlockState barrier = Blocks.BARRIER.defaultBlockState();
+        BlockPos.MutableBlockPos posMutable = new BlockPos.MutableBlockPos();
 
         for (int z = box.minZ; z <= box.maxZ; ++z)
         {
@@ -119,13 +119,13 @@ public class TaskFillArea extends TaskProcessChunkBase
                     {
                         BlockEntity te = this.world.getBlockEntity(posMutable);
 
-                        if (te instanceof Inventory)
+                        if (te instanceof Container)
                         {
-                            ((Inventory) te).clear();
-                            this.world.setBlockState(posMutable, barrier, 0x12);
+                            ((Container) te).clearContent();
+                            this.world.setBlock(posMutable, barrier, 0x12);
                         }
 
-                        this.world.setBlockState(posMutable, this.fillState, 0x12);
+                        this.world.setBlock(posMutable, this.fillState, 0x12);
                     }
                 }
             }
@@ -138,22 +138,22 @@ public class TaskFillArea extends TaskProcessChunkBase
     {
         if (removeEntities)
         {
-            net.minecraft.util.math.Box aabb = new net.minecraft.util.math.Box(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
+            net.minecraft.world.phys.AABB aabb = new net.minecraft.world.phys.AABB(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
 
-            if (this.world.getOtherEntities(this.mc.player, aabb, EntityUtils.NOT_PLAYER).size() > 0)
+            if (this.world.getEntities(this.mc.player, aabb, EntityUtils.NOT_PLAYER).size() > 0)
             {
                 String killCmd = String.format("/kill @e[type=!player,x=%d,y=%d,z=%d,dx=%d,dy=%d,dz=%d]",
                         box.minX               , box.minY               , box.minZ,
                         box.maxX - box.minX + 1, box.maxY - box.minY + 1, box.maxZ - box.minZ + 1);
 
-                this.mc.player.sendChatMessage(killCmd);
+                this.mc.player.chat(killCmd);
             }
         }
 
         String fillCmd = String.format("/fill %d %d %d %d %d %d %s",
                 box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, this.blockString);
 
-        this.mc.player.sendChatMessage(fillCmd);
+        this.mc.player.chat(fillCmd);
     }
 
     @Override

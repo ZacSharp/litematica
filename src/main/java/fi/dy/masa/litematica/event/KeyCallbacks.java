@@ -1,8 +1,5 @@
 package fi.dy.masa.litematica.event;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.config.Hotkeys;
 import fi.dy.masa.litematica.data.DataManager;
@@ -46,10 +43,13 @@ import fi.dy.masa.malilib.hotkeys.KeybindMulti;
 import fi.dy.masa.malilib.interfaces.IValueChangeCallback;
 import fi.dy.masa.malilib.util.InfoUtils;
 import fi.dy.masa.malilib.util.LayerMode;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
 
 public class KeyCallbacks
 {
-    public static void init(MinecraftClient mc)
+    public static void init(Minecraft mc)
     {
         IHotkeyCallback callbackHotkeys = new KeyCallbackHotkeys(mc);
         IHotkeyCallback callbackMessage = new KeyCallbackToggleMessage(mc);
@@ -152,9 +152,9 @@ public class KeyCallbacks
 
     private static class KeyCallbackHotkeys implements IHotkeyCallback
     {
-        private final MinecraftClient mc;
+        private final Minecraft mc;
 
-        public KeyCallbackHotkeys(MinecraftClient mc)
+        public KeyCallbackHotkeys(Minecraft mc)
         {
             this.mc = mc;
         }
@@ -162,7 +162,7 @@ public class KeyCallbacks
         @Override
         public boolean onKeyAction(KeyAction action, IKeybind key)
         {
-            if (this.mc.player == null || this.mc.world == null)
+            if (this.mc.player == null || this.mc.level == null)
             {
                 return false;
             }
@@ -205,7 +205,7 @@ public class KeyCallbacks
                         if (grabModifier && mode == ToolMode.MOVE)
                         {
                             Entity entity = fi.dy.masa.malilib.util.EntityUtils.getCameraEntity();
-                            BlockPos pos = RayTraceUtils.getTargetedPosition(this.mc.world, entity, maxDistance, false);
+                            BlockPos pos = RayTraceUtils.getTargetedPosition(this.mc.level, entity, maxDistance, false);
 
                             if (pos != null)
                             {
@@ -249,13 +249,13 @@ public class KeyCallbacks
                         else
                         {
                             Entity entity = fi.dy.masa.malilib.util.EntityUtils.getCameraEntity();
-                            sm.changeSelection(this.mc.world, entity, maxDistance);
+                            sm.changeSelection(this.mc.level, entity, maxDistance);
                         }
                     }
                     else if (mode.getUsesSchematic())
                     {
                         Entity entity = fi.dy.masa.malilib.util.EntityUtils.getCameraEntity();
-                        DataManager.getSchematicPlacementManager().changeSelection(this.mc.world, entity, maxDistance);
+                        DataManager.getSchematicPlacementManager().changeSelection(this.mc.level, entity, maxDistance);
                     }
 
                     return true;
@@ -540,9 +540,9 @@ public class KeyCallbacks
 
     private static class KeyCallbackToggleMessage implements IHotkeyCallback
     {
-        private final MinecraftClient mc;
+        private final Minecraft mc;
 
-        public KeyCallbackToggleMessage(MinecraftClient mc)
+        public KeyCallbackToggleMessage(Minecraft mc)
         {
             this.mc = mc;
         }
@@ -596,7 +596,7 @@ public class KeyCallbacks
 
                     if (selection != null)
                     {
-                        BlockPos pos = new BlockPos(this.mc.player.getPos());
+                        BlockPos pos = new BlockPos(this.mc.player.position());
 
                         if (mode == ToolMode.MOVE)
                         {
@@ -612,7 +612,7 @@ public class KeyCallbacks
                 }
                 else if (mode.getUsesSchematic())
                 {
-                    BlockPos pos = new BlockPos(this.mc.player.getPos());
+                    BlockPos pos = new BlockPos(this.mc.player.position());
                     DataManager.getSchematicPlacementManager().setPositionOfCurrentSelectionTo(pos, this.mc);
                     return true;
                 }
@@ -643,7 +643,7 @@ public class KeyCallbacks
 
                     if (area != null)
                     {
-                        BlockPos pos = new BlockPos(this.mc.player.getPos());
+                        BlockPos pos = new BlockPos(this.mc.player.position());
                         area.setExplicitOrigin(pos);
                         String posStr = String.format("x: %d, y: %d, z: %d", pos.getX(), pos.getY(), pos.getZ());
                         InfoUtils.printActionbarMessage("litematica.message.set_area_origin", posStr);
@@ -661,7 +661,7 @@ public class KeyCallbacks
 
                     if (area != null && area.getSelectedSubRegionBox() != null)
                     {
-                        BlockPos pos = new BlockPos(this.mc.player.getPos());
+                        BlockPos pos = new BlockPos(this.mc.player.position());
                         Corner corner = key == Hotkeys.SET_SELECTION_BOX_POSITION_1.getKeybind() ? Corner.CORNER_1 : Corner.CORNER_2;
                         area.setSelectedSubRegionCornerPos(pos, corner);
 

@@ -1,6 +1,9 @@
 package fi.dy.masa.litematica.gui;
 
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import fi.dy.masa.litematica.gui.GuiMainMenu.ButtonListenerChangeMenu;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement;
@@ -18,9 +21,6 @@ import fi.dy.masa.malilib.gui.widgets.WidgetCheckBox;
 import fi.dy.masa.malilib.util.GuiUtils;
 import fi.dy.masa.malilib.util.PositionUtils.CoordinateType;
 import fi.dy.masa.malilib.util.StringUtils;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.math.BlockPos;
 
 public class GuiSubRegionConfiguration extends GuiBase
 {
@@ -114,7 +114,7 @@ public class GuiSubRegionConfiguration extends GuiBase
         // The sub-region placements are relative
         BlockPos pos = this.placement.getPos();
         pos = PositionUtils.getTransformedBlockPos(pos, this.schematicPlacement.getMirror(), this.schematicPlacement.getRotation());
-        pos = pos.add(this.schematicPlacement.getOrigin());
+        pos = pos.offset(this.schematicPlacement.getOrigin());
         String text = "";
 
         switch (type)
@@ -124,8 +124,8 @@ public class GuiSubRegionConfiguration extends GuiBase
             case Z: text = String.valueOf(pos.getZ()); break;
         }
 
-        GuiTextFieldInteger textField = new GuiTextFieldInteger(x + offset, y + 2, width, 14, this.textRenderer);
-        textField.setText(text);
+        GuiTextFieldInteger textField = new GuiTextFieldInteger(x + offset, y + 2, width, 14, this.font);
+        textField.setValue(text);
         TextFieldListener listener = new TextFieldListener(type, this.schematicPlacement, this.placement, this);
         this.addTextField(textField, listener);
 
@@ -241,7 +241,7 @@ public class GuiSubRegionConfiguration extends GuiBase
             // absolute position and subtracts the placement origin internally)
             BlockPos posOld = this.placement.getPos();
             posOld = PositionUtils.getTransformedBlockPos(posOld, this.schematicPlacement.getMirror(), this.schematicPlacement.getRotation());
-            posOld = posOld.add(this.schematicPlacement.getOrigin());
+            posOld = posOld.offset(this.schematicPlacement.getOrigin());
             this.parent.setNextMessageType(MessageType.ERROR);
 
             switch (this.type)
@@ -253,7 +253,7 @@ public class GuiSubRegionConfiguration extends GuiBase
                 case ROTATE:
                 {
                     boolean reverse = mouseButton == 1;
-                    BlockRotation rotation = PositionUtils.cycleRotation(this.placement.getRotation(), reverse);
+                    Rotation rotation = PositionUtils.cycleRotation(this.placement.getRotation(), reverse);
                     this.schematicPlacement.setSubRegionRotation(this.subRegionName, rotation, this.parent);
                     break;
                 }
@@ -261,25 +261,25 @@ public class GuiSubRegionConfiguration extends GuiBase
                 case MIRROR:
                 {
                     boolean reverse = mouseButton == 1;
-                    BlockMirror mirror = PositionUtils.cycleMirror(this.placement.getMirror(), reverse);
+                    Mirror mirror = PositionUtils.cycleMirror(this.placement.getMirror(), reverse);
                     this.schematicPlacement.setSubRegionMirror(this.subRegionName, mirror, this.parent);
                     break;
                 }
 
                 case MOVE_TO_PLAYER:
-                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, new BlockPos(this.parent.mc.player.getPos()), this.parent);
+                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, new BlockPos(this.parent.mc.player.position()), this.parent);
                     break;
 
                 case NUDGE_COORD_X:
-                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, posOld.add(amount, 0, 0), this.parent);
+                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, posOld.offset(amount, 0, 0), this.parent);
                     break;
 
                 case NUDGE_COORD_Y:
-                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, posOld.add(0, amount, 0), this.parent);
+                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, posOld.offset(0, amount, 0), this.parent);
                     break;
 
                 case NUDGE_COORD_Z:
-                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, posOld.add(0, 0, amount), this.parent);
+                    this.schematicPlacement.moveSubRegionTo(this.subRegionName, posOld.offset(0, 0, amount), this.parent);
                     break;
 
                 case TOGGLE_ENABLED:
@@ -366,12 +366,12 @@ public class GuiSubRegionConfiguration extends GuiBase
         {
             try
             {
-                int value = Integer.parseInt(textField.getText());
+                int value = Integer.parseInt(textField.getValue());
                 // The sub-region placements are relative (but the setter below uses the
                 // absolute position and subtracts the placement origin internally)
                 BlockPos posOld = this.placement.getPos();
                 posOld = PositionUtils.getTransformedBlockPos(posOld, this.schematicPlacement.getMirror(), this.schematicPlacement.getRotation());
-                posOld = posOld.add(this.schematicPlacement.getOrigin());
+                posOld = posOld.offset(this.schematicPlacement.getOrigin());
                 BlockPos pos = posOld;
 
                 switch (this.type)

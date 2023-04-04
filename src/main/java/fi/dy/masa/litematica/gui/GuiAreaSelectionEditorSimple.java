@@ -1,6 +1,7 @@
 package fi.dy.masa.litematica.gui;
 
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.gui.widgets.WidgetListSelectionSubRegions;
 import fi.dy.masa.litematica.selection.AreaSelection;
@@ -10,7 +11,6 @@ import fi.dy.masa.litematica.util.PositionUtils;
 import fi.dy.masa.litematica.util.PositionUtils.Corner;
 import fi.dy.masa.malilib.gui.GuiTextFieldGeneric;
 import fi.dy.masa.malilib.util.StringUtils;
-import net.minecraft.util.math.BlockPos;
 
 public class GuiAreaSelectionEditorSimple extends GuiAreaSelectionEditorNormal
 {
@@ -42,8 +42,8 @@ public class GuiAreaSelectionEditorSimple extends GuiAreaSelectionEditorNormal
         this.createButtonOnOff(this.xOrigin, 24, -1, currentlyOn, ButtonListener.Type.TOGGLE_ORIGIN_ENABLED);
 
         int width = 202;
-        this.textFieldBoxName = new GuiTextFieldGeneric(x, y + 2, width, 16, this.textRenderer);
-        this.textFieldBoxName.setText(this.getBox().getName());
+        this.textFieldBoxName = new GuiTextFieldGeneric(x, y + 2, width, 16, this.font);
+        this.textFieldBoxName.setValue(this.getBox().getName());
         this.addTextField(this.textFieldBoxName, new TextFieldListenerDummy());
         this.createButton(x + width + 4, y, -1, ButtonListener.Type.SET_BOX_NAME);
         y += 20;
@@ -82,7 +82,7 @@ public class GuiAreaSelectionEditorSimple extends GuiAreaSelectionEditorNormal
     protected void renameSubRegion()
     {
         String oldName = this.selection.getCurrentSubRegionBoxName();
-        String newName = this.textFieldBoxName.getText();
+        String newName = this.textFieldBoxName.getValue();
         this.selection.renameSubRegionBox(oldName, newName);
     }
 

@@ -1,14 +1,14 @@
 package fi.dy.masa.litematica.schematic.conversion;
 
 import javax.annotation.Nullable;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.BlockGetter;
 
-public interface IBlockReaderWithData extends BlockView
+public interface IBlockReaderWithData extends BlockGetter
 {
     @Nullable
-    NbtCompound getBlockEntityData(BlockPos pos);
+    CompoundTag getBlockEntityData(BlockPos pos);
 
     // TODO 1.17: These shouldn't matter here... right?
     @Override
@@ -18,7 +18,7 @@ public interface IBlockReaderWithData extends BlockView
     }
 
     @Override
-    default int getBottomY()
+    default int getMinBuildHeight()
     {
         return -64;
     }

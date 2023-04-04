@@ -1,63 +1,63 @@
 package fi.dy.masa.litematica.schematic.conversion;
 
-import net.minecraft.block.AbstractBannerBlock;
-import net.minecraft.block.AbstractFireBlock;
-import net.minecraft.block.AbstractRedstoneGateBlock;
-import net.minecraft.block.AbstractSkullBlock;
-import net.minecraft.block.AttachedStemBlock;
-import net.minecraft.block.BannerBlock;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.ChorusPlantBlock;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.FenceBlock;
-import net.minecraft.block.FenceGateBlock;
-import net.minecraft.block.GourdBlock;
-import net.minecraft.block.HorizontalConnectingBlock;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.block.PaneBlock;
-import net.minecraft.block.RedstoneWireBlock;
-import net.minecraft.block.RepeaterBlock;
-import net.minecraft.block.SkullBlock;
-import net.minecraft.block.SnowyBlock;
-import net.minecraft.block.StairsBlock;
-import net.minecraft.block.StemBlock;
-import net.minecraft.block.TallPlantBlock;
-import net.minecraft.block.TripwireBlock;
-import net.minecraft.block.VineBlock;
-import net.minecraft.block.WallBannerBlock;
-import net.minecraft.block.WallSkullBlock;
-import net.minecraft.block.enums.BedPart;
-import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.block.enums.Instrument;
-import net.minecraft.block.enums.WireConnection;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.state.property.BooleanProperty;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.BlockView;
 import fi.dy.masa.litematica.mixin.IMixinFenceGateBlock;
 import fi.dy.masa.litematica.mixin.IMixinRedstoneWireBlock;
 import fi.dy.masa.litematica.mixin.IMixinStairsBlock;
 import fi.dy.masa.litematica.mixin.IMixinVineBlock;
 import fi.dy.masa.malilib.util.Constants;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.AbstractBannerBlock;
+import net.minecraft.world.level.block.AbstractSkullBlock;
+import net.minecraft.world.level.block.AttachedStemBlock;
+import net.minecraft.world.level.block.BannerBlock;
+import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChorusPlantBlock;
+import net.minecraft.world.level.block.CrossCollisionBlock;
+import net.minecraft.world.level.block.DiodeBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.IronBarsBlock;
+import net.minecraft.world.level.block.NoteBlock;
+import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.RepeaterBlock;
+import net.minecraft.world.level.block.SkullBlock;
+import net.minecraft.world.level.block.SnowyDirtBlock;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.StemBlock;
+import net.minecraft.world.level.block.StemGrownBlock;
+import net.minecraft.world.level.block.TripWireBlock;
+import net.minecraft.world.level.block.VineBlock;
+import net.minecraft.world.level.block.WallBannerBlock;
+import net.minecraft.world.level.block.WallSkullBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
+import net.minecraft.world.level.block.state.properties.RedstoneSide;
 
 public class SchematicConversionFixers
 {
-    private static final BooleanProperty[] HORIZONTAL_CONNECTING_BLOCK_PROPS = new BooleanProperty[] { null, null, HorizontalConnectingBlock.NORTH, HorizontalConnectingBlock.SOUTH, HorizontalConnectingBlock.WEST, HorizontalConnectingBlock.EAST };
-    private static final BlockState REDSTONE_WIRE_DOT = Blocks.REDSTONE_WIRE.getDefaultState();
-    private static final BlockState REDSTONE_WIRE_CROSS = Blocks.REDSTONE_WIRE.getDefaultState()
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_NORTH, WireConnection.SIDE)
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_EAST, WireConnection.SIDE)
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_SOUTH, WireConnection.SIDE)
-                          .with(RedstoneWireBlock.WIRE_CONNECTION_WEST, WireConnection.SIDE);
+    private static final BooleanProperty[] HORIZONTAL_CONNECTING_BLOCK_PROPS = new BooleanProperty[] { null, null, CrossCollisionBlock.NORTH, CrossCollisionBlock.SOUTH, CrossCollisionBlock.WEST, CrossCollisionBlock.EAST };
+    private static final BlockState REDSTONE_WIRE_DOT = Blocks.REDSTONE_WIRE.defaultBlockState();
+    private static final BlockState REDSTONE_WIRE_CROSS = Blocks.REDSTONE_WIRE.defaultBlockState()
+                          .setValue(RedStoneWireBlock.NORTH, RedstoneSide.SIDE)
+                          .setValue(RedStoneWireBlock.EAST, RedstoneSide.SIDE)
+                          .setValue(RedStoneWireBlock.SOUTH, RedstoneSide.SIDE)
+                          .setValue(RedStoneWireBlock.WEST, RedstoneSide.SIDE);
 
     public static final IStateFixer FIXER_BANNER = (reader, state, pos) -> {
-        NbtCompound tag = reader.getBlockEntityData(pos);
+        CompoundTag tag = reader.getBlockEntityData(pos);
 
         if (tag != null)
         {
@@ -66,29 +66,29 @@ public class SchematicConversionFixers
 
             if (colorOrig != colorFromData)
             {
-                Integer rotation = state.get(BannerBlock.ROTATION);
+                Integer rotation = state.getValue(BannerBlock.ROTATION);
 
                 switch (colorFromData)
                 {
-                    case WHITE:         state = Blocks.WHITE_BANNER.getDefaultState();      break;
-                    case ORANGE:        state = Blocks.ORANGE_BANNER.getDefaultState();     break;
-                    case MAGENTA:       state = Blocks.MAGENTA_BANNER.getDefaultState();    break;
-                    case LIGHT_BLUE:    state = Blocks.LIGHT_BLUE_BANNER.getDefaultState(); break;
-                    case YELLOW:        state = Blocks.YELLOW_BANNER.getDefaultState();     break;
-                    case LIME:          state = Blocks.LIME_BANNER.getDefaultState();       break;
-                    case PINK:          state = Blocks.PINK_BANNER.getDefaultState();       break;
-                    case GRAY:          state = Blocks.GRAY_BANNER.getDefaultState();       break;
-                    case LIGHT_GRAY:    state = Blocks.LIGHT_GRAY_BANNER.getDefaultState(); break;
-                    case CYAN:          state = Blocks.CYAN_BANNER.getDefaultState();       break;
-                    case PURPLE:        state = Blocks.PURPLE_BANNER.getDefaultState();     break;
-                    case BLUE:          state = Blocks.BLUE_BANNER.getDefaultState();       break;
-                    case BROWN:         state = Blocks.BROWN_BANNER.getDefaultState();      break;
-                    case GREEN:         state = Blocks.GREEN_BANNER.getDefaultState();      break;
-                    case RED:           state = Blocks.RED_BANNER.getDefaultState();        break;
-                    case BLACK:         state = Blocks.BLACK_BANNER.getDefaultState();      break;
+                    case WHITE:         state = Blocks.WHITE_BANNER.defaultBlockState();      break;
+                    case ORANGE:        state = Blocks.ORANGE_BANNER.defaultBlockState();     break;
+                    case MAGENTA:       state = Blocks.MAGENTA_BANNER.defaultBlockState();    break;
+                    case LIGHT_BLUE:    state = Blocks.LIGHT_BLUE_BANNER.defaultBlockState(); break;
+                    case YELLOW:        state = Blocks.YELLOW_BANNER.defaultBlockState();     break;
+                    case LIME:          state = Blocks.LIME_BANNER.defaultBlockState();       break;
+                    case PINK:          state = Blocks.PINK_BANNER.defaultBlockState();       break;
+                    case GRAY:          state = Blocks.GRAY_BANNER.defaultBlockState();       break;
+                    case LIGHT_GRAY:    state = Blocks.LIGHT_GRAY_BANNER.defaultBlockState(); break;
+                    case CYAN:          state = Blocks.CYAN_BANNER.defaultBlockState();       break;
+                    case PURPLE:        state = Blocks.PURPLE_BANNER.defaultBlockState();     break;
+                    case BLUE:          state = Blocks.BLUE_BANNER.defaultBlockState();       break;
+                    case BROWN:         state = Blocks.BROWN_BANNER.defaultBlockState();      break;
+                    case GREEN:         state = Blocks.GREEN_BANNER.defaultBlockState();      break;
+                    case RED:           state = Blocks.RED_BANNER.defaultBlockState();        break;
+                    case BLACK:         state = Blocks.BLACK_BANNER.defaultBlockState();      break;
                 }
 
-                state = state.with(BannerBlock.ROTATION, rotation);
+                state = state.setValue(BannerBlock.ROTATION, rotation);
             }
         }
 
@@ -96,7 +96,7 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_BANNER_WALL = (reader, state, pos) -> {
-        NbtCompound tag = reader.getBlockEntityData(pos);
+        CompoundTag tag = reader.getBlockEntityData(pos);
 
         if (tag != null)
         {
@@ -105,29 +105,29 @@ public class SchematicConversionFixers
 
             if (colorOrig != colorFromData)
             {
-                Direction facing = state.get(WallBannerBlock.FACING);
+                Direction facing = state.getValue(WallBannerBlock.FACING);
 
                 switch (colorFromData)
                 {
-                    case WHITE:         state = Blocks.WHITE_WALL_BANNER.getDefaultState();      break;
-                    case ORANGE:        state = Blocks.ORANGE_WALL_BANNER.getDefaultState();     break;
-                    case MAGENTA:       state = Blocks.MAGENTA_WALL_BANNER.getDefaultState();    break;
-                    case LIGHT_BLUE:    state = Blocks.LIGHT_BLUE_WALL_BANNER.getDefaultState(); break;
-                    case YELLOW:        state = Blocks.YELLOW_WALL_BANNER.getDefaultState();     break;
-                    case LIME:          state = Blocks.LIME_WALL_BANNER.getDefaultState();       break;
-                    case PINK:          state = Blocks.PINK_WALL_BANNER.getDefaultState();       break;
-                    case GRAY:          state = Blocks.GRAY_WALL_BANNER.getDefaultState();       break;
-                    case LIGHT_GRAY:    state = Blocks.LIGHT_GRAY_WALL_BANNER.getDefaultState(); break;
-                    case CYAN:          state = Blocks.CYAN_WALL_BANNER.getDefaultState();       break;
-                    case PURPLE:        state = Blocks.PURPLE_WALL_BANNER.getDefaultState();     break;
-                    case BLUE:          state = Blocks.BLUE_WALL_BANNER.getDefaultState();       break;
-                    case BROWN:         state = Blocks.BROWN_WALL_BANNER.getDefaultState();      break;
-                    case GREEN:         state = Blocks.GREEN_WALL_BANNER.getDefaultState();      break;
-                    case RED:           state = Blocks.RED_WALL_BANNER.getDefaultState();        break;
-                    case BLACK:         state = Blocks.BLACK_WALL_BANNER.getDefaultState();      break;
+                    case WHITE:         state = Blocks.WHITE_WALL_BANNER.defaultBlockState();      break;
+                    case ORANGE:        state = Blocks.ORANGE_WALL_BANNER.defaultBlockState();     break;
+                    case MAGENTA:       state = Blocks.MAGENTA_WALL_BANNER.defaultBlockState();    break;
+                    case LIGHT_BLUE:    state = Blocks.LIGHT_BLUE_WALL_BANNER.defaultBlockState(); break;
+                    case YELLOW:        state = Blocks.YELLOW_WALL_BANNER.defaultBlockState();     break;
+                    case LIME:          state = Blocks.LIME_WALL_BANNER.defaultBlockState();       break;
+                    case PINK:          state = Blocks.PINK_WALL_BANNER.defaultBlockState();       break;
+                    case GRAY:          state = Blocks.GRAY_WALL_BANNER.defaultBlockState();       break;
+                    case LIGHT_GRAY:    state = Blocks.LIGHT_GRAY_WALL_BANNER.defaultBlockState(); break;
+                    case CYAN:          state = Blocks.CYAN_WALL_BANNER.defaultBlockState();       break;
+                    case PURPLE:        state = Blocks.PURPLE_WALL_BANNER.defaultBlockState();     break;
+                    case BLUE:          state = Blocks.BLUE_WALL_BANNER.defaultBlockState();       break;
+                    case BROWN:         state = Blocks.BROWN_WALL_BANNER.defaultBlockState();      break;
+                    case GREEN:         state = Blocks.GREEN_WALL_BANNER.defaultBlockState();      break;
+                    case RED:           state = Blocks.RED_WALL_BANNER.defaultBlockState();        break;
+                    case BLACK:         state = Blocks.BLACK_WALL_BANNER.defaultBlockState();      break;
                 }
 
-                state = state.with(WallBannerBlock.FACING, facing);
+                state = state.setValue(WallBannerBlock.FACING, facing);
             }
         }
 
@@ -135,72 +135,72 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_BED = (reader, state, pos) -> {
-        NbtCompound tag = reader.getBlockEntityData(pos);
+        CompoundTag tag = reader.getBlockEntityData(pos);
 
         if (tag != null && tag.contains("color", Constants.NBT.TAG_INT))
         {
             int colorId = tag.getInt("color");
-            Direction facing = state.get(BedBlock.FACING);
-            BedPart part = state.get(BedBlock.PART);
-            Boolean occupied = state.get(BedBlock.OCCUPIED);
+            Direction facing = state.getValue(BedBlock.FACING);
+            BedPart part = state.getValue(BedBlock.PART);
+            Boolean occupied = state.getValue(BedBlock.OCCUPIED);
 
             switch (colorId)
             {
-                case  0: state = Blocks.WHITE_BED.getDefaultState(); break;
-                case  1: state = Blocks.ORANGE_BED.getDefaultState(); break;
-                case  2: state = Blocks.MAGENTA_BED.getDefaultState(); break;
-                case  3: state = Blocks.LIGHT_BLUE_BED.getDefaultState(); break;
-                case  4: state = Blocks.YELLOW_BED.getDefaultState(); break;
-                case  5: state = Blocks.LIME_BED.getDefaultState(); break;
-                case  6: state = Blocks.PINK_BED.getDefaultState(); break;
-                case  7: state = Blocks.GRAY_BED.getDefaultState(); break;
-                case  8: state = Blocks.LIGHT_GRAY_BED.getDefaultState(); break;
-                case  9: state = Blocks.CYAN_BED.getDefaultState(); break;
-                case 10: state = Blocks.PURPLE_BED.getDefaultState(); break;
-                case 11: state = Blocks.BLUE_BED.getDefaultState(); break;
-                case 12: state = Blocks.BROWN_BED.getDefaultState(); break;
-                case 13: state =  Blocks.GREEN_BED.getDefaultState(); break;
-                case 14: state = Blocks.RED_BED.getDefaultState(); break;
-                case 15: state = Blocks.BLACK_BED.getDefaultState(); break;
+                case  0: state = Blocks.WHITE_BED.defaultBlockState(); break;
+                case  1: state = Blocks.ORANGE_BED.defaultBlockState(); break;
+                case  2: state = Blocks.MAGENTA_BED.defaultBlockState(); break;
+                case  3: state = Blocks.LIGHT_BLUE_BED.defaultBlockState(); break;
+                case  4: state = Blocks.YELLOW_BED.defaultBlockState(); break;
+                case  5: state = Blocks.LIME_BED.defaultBlockState(); break;
+                case  6: state = Blocks.PINK_BED.defaultBlockState(); break;
+                case  7: state = Blocks.GRAY_BED.defaultBlockState(); break;
+                case  8: state = Blocks.LIGHT_GRAY_BED.defaultBlockState(); break;
+                case  9: state = Blocks.CYAN_BED.defaultBlockState(); break;
+                case 10: state = Blocks.PURPLE_BED.defaultBlockState(); break;
+                case 11: state = Blocks.BLUE_BED.defaultBlockState(); break;
+                case 12: state = Blocks.BROWN_BED.defaultBlockState(); break;
+                case 13: state =  Blocks.GREEN_BED.defaultBlockState(); break;
+                case 14: state = Blocks.RED_BED.defaultBlockState(); break;
+                case 15: state = Blocks.BLACK_BED.defaultBlockState(); break;
                 default: return state;
             }
 
-            state = state.with(BedBlock.FACING, facing)
-                         .with(BedBlock.PART, part)
-                         .with(BedBlock.OCCUPIED, occupied);
+            state = state.setValue(BedBlock.FACING, facing)
+                         .setValue(BedBlock.PART, part)
+                         .setValue(BedBlock.OCCUPIED, occupied);
         }
 
         return state;
     };
 
     public static final IStateFixer FIXER_CHRORUS_PLANT = (reader, state, pos) -> {
-        return ((ChorusPlantBlock) state.getBlock()).withConnectionProperties(reader, pos);
+        return ((ChorusPlantBlock) state.getBlock()).getStateForPlacement(reader, pos);
     };
 
     public static final IStateFixer FIXER_DIRT_SNOWY = (reader, state, pos) -> {
-        Block block = reader.getBlockState(pos.up()).getBlock();
-        return state.with(SnowyBlock.SNOWY, Boolean.valueOf(block == Blocks.SNOW_BLOCK || block == Blocks.SNOW));
+        Block block = reader.getBlockState(pos.above()).getBlock();
+        return state.setValue(SnowyDirtBlock.SNOWY, Boolean.valueOf(block == Blocks.SNOW_BLOCK || block == Blocks.SNOW));
     };
 
     public static final IStateFixer FIXER_DOOR = (reader, state, pos) -> {
-        if (state.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER)
+        if (state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER)
         {
-            BlockState stateLower = reader.getBlockState(pos.down());
+            BlockState stateLower = reader.getBlockState(pos.below());
 
             if (stateLower.getBlock() == state.getBlock())
             {
-                state = state.with(DoorBlock.FACING, stateLower.get(DoorBlock.FACING));
-                state = state.with(DoorBlock.OPEN,   stateLower.get(DoorBlock.OPEN));
+                state = state.setValue(DoorBlock.FACING, stateLower.getValue(DoorBlock.FACING));
+                state = state.setValue(DoorBlock.OPEN,   stateLower.getValue(DoorBlock.OPEN));
             }
         }
         else
         {
-            BlockState stateUpper = reader.getBlockState(pos.up());
+            BlockState stateUpper = reader.getBlockState(pos.above());
 
             if (stateUpper.getBlock() == state.getBlock())
             {
-                state = state.with(DoorBlock.HINGE,   stateUpper.get(DoorBlock.HINGE));
-                state = state.with(DoorBlock.POWERED, stateUpper.get(DoorBlock.POWERED));
+                state = state.setValue(DoorBlock.HINGE,   stateUpper.getValue(DoorBlock.HINGE));
+                state = state.setValue(DoorBlock.POWERED, stateUpper.getValue(DoorBlock.POWERED));
             }
         }
 
@@ -208,13 +208,13 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_DOUBLE_PLANT = (reader, state, pos) -> {
-        if (state.get(TallPlantBlock.HALF) == DoubleBlockHalf.UPPER)
+        if (state.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.UPPER)
         {
-            BlockState stateLower = reader.getBlockState(pos.down());
+            BlockState stateLower = reader.getBlockState(pos.below());
 
-            if (stateLower.getBlock() instanceof TallPlantBlock)
+            if (stateLower.getBlock() instanceof DoublePlantBlock)
             {
-                state = stateLower.with(TallPlantBlock.HALF, DoubleBlockHalf.UPPER);
+                state = stateLower.setValue(DoublePlantBlock.HALF, DoubleBlockHalf.UPPER);
             }
         }
 
@@ -226,11 +226,11 @@ public class SchematicConversionFixers
 
         for (Direction side : fi.dy.masa.malilib.util.PositionUtils.HORIZONTAL_DIRECTIONS)
         {
-            BlockPos posAdj = pos.offset(side);
+            BlockPos posAdj = pos.relative(side);
             BlockState stateAdj = reader.getBlockState(posAdj);
             Direction sideOpposite = side.getOpposite();
-            boolean flag = stateAdj.isSideSolidFullSquare(reader, posAdj, sideOpposite);
-            state = state.with(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.getId()], fence.canConnect(stateAdj, flag, sideOpposite));
+            boolean flag = stateAdj.isFaceSturdy(reader, posAdj, sideOpposite);
+            state = state.setValue(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.get3DDataValue()], fence.connectsTo(stateAdj, flag, sideOpposite));
         }
 
         return state;
@@ -238,29 +238,29 @@ public class SchematicConversionFixers
 
     public static final IStateFixer FIXER_FENCE_GATE = (reader, state, pos) -> {
         FenceGateBlock gate = (FenceGateBlock) state.getBlock();
-        Direction facing = state.get(FenceGateBlock.FACING);
+        Direction facing = state.getValue(FenceGateBlock.FACING);
         boolean inWall = false;
 
         if (facing.getAxis() == Direction.Axis.X)
         {
-            inWall = (((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.offset(Direction.NORTH)))
-                   || ((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.offset(Direction.SOUTH))));
+            inWall = (((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.relative(Direction.NORTH)))
+                   || ((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.relative(Direction.SOUTH))));
         }
         else
         {
-            inWall = (((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.offset(Direction.WEST)))
-                   || ((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.offset(Direction.EAST))));
+            inWall = (((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.relative(Direction.WEST)))
+                   || ((IMixinFenceGateBlock) gate).invokeIsWall(reader.getBlockState(pos.relative(Direction.EAST))));
         }
 
-        return state.with(FenceGateBlock.IN_WALL, inWall);
+        return state.setValue(FenceGateBlock.IN_WALL, inWall);
     };
 
     public static final IStateFixer FIXER_FIRE = (reader, state, pos) -> {
-        return AbstractFireBlock.getState(reader, pos);
+        return BaseFireBlock.getState(reader, pos);
     };
 
     public static final IStateFixer FIXER_FLOWER_POT = (reader, state, pos) -> {
-        NbtCompound tag = reader.getBlockEntityData(pos);
+        CompoundTag tag = reader.getBlockEntityData(pos);
 
         if (tag != null)
         {
@@ -273,33 +273,33 @@ public class SchematicConversionFixers
                 switch (itemName)
                 {
                     case "minecraft:sapling":
-                        if (meta == 0)      return Blocks.POTTED_OAK_SAPLING.getDefaultState();
-                        if (meta == 1)      return Blocks.POTTED_SPRUCE_SAPLING.getDefaultState();
-                        if (meta == 2)      return Blocks.POTTED_BIRCH_SAPLING.getDefaultState();
-                        if (meta == 3)      return Blocks.POTTED_JUNGLE_SAPLING.getDefaultState();
-                        if (meta == 4)      return Blocks.POTTED_ACACIA_SAPLING.getDefaultState();
-                        if (meta == 5)      return Blocks.POTTED_DARK_OAK_SAPLING.getDefaultState();
+                        if (meta == 0)      return Blocks.POTTED_OAK_SAPLING.defaultBlockState();
+                        if (meta == 1)      return Blocks.POTTED_SPRUCE_SAPLING.defaultBlockState();
+                        if (meta == 2)      return Blocks.POTTED_BIRCH_SAPLING.defaultBlockState();
+                        if (meta == 3)      return Blocks.POTTED_JUNGLE_SAPLING.defaultBlockState();
+                        if (meta == 4)      return Blocks.POTTED_ACACIA_SAPLING.defaultBlockState();
+                        if (meta == 5)      return Blocks.POTTED_DARK_OAK_SAPLING.defaultBlockState();
                         break;
                     case "minecraft:tallgrass":
-                        if (meta == 0)      return Blocks.POTTED_DEAD_BUSH.getDefaultState();
-                        if (meta == 2)      return Blocks.POTTED_FERN.getDefaultState();
+                        if (meta == 0)      return Blocks.POTTED_DEAD_BUSH.defaultBlockState();
+                        if (meta == 2)      return Blocks.POTTED_FERN.defaultBlockState();
                         break;
                     case "minecraft:red_flower":
-                        if (meta == 0)      return Blocks.POTTED_POPPY.getDefaultState();
-                        if (meta == 1)      return Blocks.POTTED_BLUE_ORCHID.getDefaultState();
-                        if (meta == 2)      return Blocks.POTTED_ALLIUM.getDefaultState();
-                        if (meta == 3)      return Blocks.POTTED_AZURE_BLUET.getDefaultState();
-                        if (meta == 4)      return Blocks.POTTED_RED_TULIP.getDefaultState();
-                        if (meta == 5)      return Blocks.POTTED_ORANGE_TULIP.getDefaultState();
-                        if (meta == 6)      return Blocks.POTTED_WHITE_TULIP.getDefaultState();
-                        if (meta == 7)      return Blocks.POTTED_PINK_TULIP.getDefaultState();
-                        if (meta == 8)      return Blocks.POTTED_OXEYE_DAISY.getDefaultState();
+                        if (meta == 0)      return Blocks.POTTED_POPPY.defaultBlockState();
+                        if (meta == 1)      return Blocks.POTTED_BLUE_ORCHID.defaultBlockState();
+                        if (meta == 2)      return Blocks.POTTED_ALLIUM.defaultBlockState();
+                        if (meta == 3)      return Blocks.POTTED_AZURE_BLUET.defaultBlockState();
+                        if (meta == 4)      return Blocks.POTTED_RED_TULIP.defaultBlockState();
+                        if (meta == 5)      return Blocks.POTTED_ORANGE_TULIP.defaultBlockState();
+                        if (meta == 6)      return Blocks.POTTED_WHITE_TULIP.defaultBlockState();
+                        if (meta == 7)      return Blocks.POTTED_PINK_TULIP.defaultBlockState();
+                        if (meta == 8)      return Blocks.POTTED_OXEYE_DAISY.defaultBlockState();
                         break;
-                    case "minecraft:yellow_flower":     return Blocks.POTTED_DANDELION.getDefaultState();
-                    case "minecraft:brown_mushroom":    return Blocks.POTTED_BROWN_MUSHROOM.getDefaultState();
-                    case "minecraft:red_mushroom":      return Blocks.POTTED_RED_MUSHROOM.getDefaultState();
-                    case "minecraft:deadbush":          return Blocks.POTTED_DEAD_BUSH.getDefaultState();
-                    case "minecraft:cactus":            return Blocks.POTTED_CACTUS.getDefaultState();
+                    case "minecraft:yellow_flower":     return Blocks.POTTED_DANDELION.defaultBlockState();
+                    case "minecraft:brown_mushroom":    return Blocks.POTTED_BROWN_MUSHROOM.defaultBlockState();
+                    case "minecraft:red_mushroom":      return Blocks.POTTED_RED_MUSHROOM.defaultBlockState();
+                    case "minecraft:deadbush":          return Blocks.POTTED_DEAD_BUSH.defaultBlockState();
+                    case "minecraft:cactus":            return Blocks.POTTED_CACTUS.defaultBlockState();
                     default:                            return state;
                 }
             }
@@ -309,141 +309,141 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_NOTE_BLOCK = (reader, state, pos) -> {
-        NbtCompound tag = reader.getBlockEntityData(pos);
+        CompoundTag tag = reader.getBlockEntityData(pos);
 
         if (tag != null)
         {
             state = state
-                        .with(NoteBlock.POWERED, Boolean.valueOf(tag.getBoolean("powered")))
-                        .with(NoteBlock.NOTE, Integer.valueOf(MathHelper.clamp(tag.getByte("note"), 0, 24)))
-                        .with(NoteBlock.INSTRUMENT, Instrument.fromBlockState(reader.getBlockState(pos.down())));
+                        .setValue(NoteBlock.POWERED, Boolean.valueOf(tag.getBoolean("powered")))
+                        .setValue(NoteBlock.NOTE, Integer.valueOf(Mth.clamp(tag.getByte("note"), 0, 24)))
+                        .setValue(NoteBlock.INSTRUMENT, NoteBlockInstrument.byState(reader.getBlockState(pos.below())));
         }
 
         return state;
     };
 
     public static final IStateFixer FIXER_PANE = (reader, state, pos) -> {
-        PaneBlock pane = (PaneBlock) state.getBlock();
+        IronBarsBlock pane = (IronBarsBlock) state.getBlock();
 
         for (Direction side : fi.dy.masa.malilib.util.PositionUtils.HORIZONTAL_DIRECTIONS)
         {
-            BlockPos posAdj = pos.offset(side);
+            BlockPos posAdj = pos.relative(side);
             BlockState stateAdj = reader.getBlockState(posAdj);
             Direction sideOpposite = side.getOpposite();
-            boolean flag = stateAdj.isSideSolidFullSquare(reader, posAdj, sideOpposite);
-            state = state.with(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.getId()], pane.connectsTo(stateAdj, flag));
+            boolean flag = stateAdj.isFaceSturdy(reader, posAdj, sideOpposite);
+            state = state.setValue(HORIZONTAL_CONNECTING_BLOCK_PROPS[side.get3DDataValue()], pane.attachsTo(stateAdj, flag));
         }
 
         return state;
     };
 
     public static final IStateFixer FIXER_REDSTONE_REPEATER = (reader, state, pos) -> {
-        return state.with(RepeaterBlock.LOCKED, Boolean.valueOf(getIsRepeaterPoweredOnSide(reader, pos, state)));
+        return state.setValue(RepeaterBlock.LOCKED, Boolean.valueOf(getIsRepeaterPoweredOnSide(reader, pos, state)));
     };
 
     public static final IStateFixer FIXER_REDSTONE_WIRE = (reader, state, pos) -> {
-        RedstoneWireBlock wire = (RedstoneWireBlock) state.getBlock();
+        RedStoneWireBlock wire = (RedStoneWireBlock) state.getBlock();
         state = ((IMixinRedstoneWireBlock) wire).litematicaGetPlacementState(reader, state, pos);
 
         // Turn all old dots into crosses, while keeping the power level
-        if (state.with(RedstoneWireBlock.POWER, 0) == REDSTONE_WIRE_DOT)
+        if (state.setValue(RedStoneWireBlock.POWER, 0) == REDSTONE_WIRE_DOT)
         {
-            state = REDSTONE_WIRE_CROSS.with(RedstoneWireBlock.POWER, state.get(RedstoneWireBlock.POWER));
+            state = REDSTONE_WIRE_CROSS.setValue(RedStoneWireBlock.POWER, state.getValue(RedStoneWireBlock.POWER));
         }
 
         return state;
     };
 
     public static final IStateFixer FIXER_SKULL = (reader, state, pos) -> {
-        NbtCompound tag = reader.getBlockEntityData(pos);
+        CompoundTag tag = reader.getBlockEntityData(pos);
 
         if (tag != null)
         {
-            int id = MathHelper.clamp(tag.getByte("SkullType"), 0, 5);
+            int id = Mth.clamp(tag.getByte("SkullType"), 0, 5);
 
             // ;_; >_> <_<
             if (id == 2) { id = 3; } else if (id == 3) { id = 2; }
 
-            SkullBlock.SkullType typeOrig = ((AbstractSkullBlock) state.getBlock()).getSkullType();
-            SkullBlock.SkullType typeFromData = SkullBlock.Type.values()[id];
+            SkullBlock.Type typeOrig = ((AbstractSkullBlock) state.getBlock()).getType();
+            SkullBlock.Type typeFromData = SkullBlock.Types.values()[id];
 
             if (typeOrig != typeFromData)
             {
-                if (typeFromData == SkullBlock.Type.SKELETON)
+                if (typeFromData == SkullBlock.Types.SKELETON)
                 {
-                    state = Blocks.SKELETON_SKULL.getDefaultState();
+                    state = Blocks.SKELETON_SKULL.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.WITHER_SKELETON)
+                else if (typeFromData == SkullBlock.Types.WITHER_SKELETON)
                 {
-                    state = Blocks.WITHER_SKELETON_SKULL.getDefaultState();
+                    state = Blocks.WITHER_SKELETON_SKULL.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.PLAYER)
+                else if (typeFromData == SkullBlock.Types.PLAYER)
                 {
-                    state = Blocks.PLAYER_HEAD.getDefaultState();
+                    state = Blocks.PLAYER_HEAD.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.ZOMBIE)
+                else if (typeFromData == SkullBlock.Types.ZOMBIE)
                 {
-                    state = Blocks.ZOMBIE_HEAD.getDefaultState();
+                    state = Blocks.ZOMBIE_HEAD.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.CREEPER)
+                else if (typeFromData == SkullBlock.Types.CREEPER)
                 {
-                    state = Blocks.CREEPER_HEAD.getDefaultState();
+                    state = Blocks.CREEPER_HEAD.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.DRAGON)
+                else if (typeFromData == SkullBlock.Types.DRAGON)
                 {
-                    state = Blocks.DRAGON_HEAD.getDefaultState();
+                    state = Blocks.DRAGON_HEAD.defaultBlockState();
                 }
             }
 
-            state = state.with(BannerBlock.ROTATION, MathHelper.clamp(tag.getByte("Rot"), 0, 15));
+            state = state.setValue(BannerBlock.ROTATION, Mth.clamp(tag.getByte("Rot"), 0, 15));
         }
 
         return state;
     };
 
     public static final IStateFixer FIXER_SKULL_WALL = (reader, state, pos) -> {
-        NbtCompound tag = reader.getBlockEntityData(pos);
+        CompoundTag tag = reader.getBlockEntityData(pos);
 
         if (tag != null)
         {
-            int id = MathHelper.clamp(tag.getByte("SkullType"), 0, 5);
+            int id = Mth.clamp(tag.getByte("SkullType"), 0, 5);
 
             // ;_; >_> <_<
             if (id == 2) { id = 3; } else if (id == 3) { id = 2; }
 
-            SkullBlock.SkullType typeOrig = ((AbstractSkullBlock) state.getBlock()).getSkullType();
-            SkullBlock.SkullType typeFromData = SkullBlock.Type.values()[id];
+            SkullBlock.Type typeOrig = ((AbstractSkullBlock) state.getBlock()).getType();
+            SkullBlock.Type typeFromData = SkullBlock.Types.values()[id];
 
             if (typeOrig != typeFromData)
             {
-                Direction facing = state.get(WallSkullBlock.FACING);
+                Direction facing = state.getValue(WallSkullBlock.FACING);
 
-                if (typeFromData == SkullBlock.Type.SKELETON)
+                if (typeFromData == SkullBlock.Types.SKELETON)
                 {
-                    state = Blocks.SKELETON_WALL_SKULL.getDefaultState();
+                    state = Blocks.SKELETON_WALL_SKULL.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.WITHER_SKELETON)
+                else if (typeFromData == SkullBlock.Types.WITHER_SKELETON)
                 {
-                    state = Blocks.WITHER_SKELETON_WALL_SKULL.getDefaultState();
+                    state = Blocks.WITHER_SKELETON_WALL_SKULL.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.PLAYER)
+                else if (typeFromData == SkullBlock.Types.PLAYER)
                 {
-                    state = Blocks.PLAYER_WALL_HEAD.getDefaultState();
+                    state = Blocks.PLAYER_WALL_HEAD.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.ZOMBIE)
+                else if (typeFromData == SkullBlock.Types.ZOMBIE)
                 {
-                    state = Blocks.ZOMBIE_WALL_HEAD.getDefaultState();
+                    state = Blocks.ZOMBIE_WALL_HEAD.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.CREEPER)
+                else if (typeFromData == SkullBlock.Types.CREEPER)
                 {
-                    state = Blocks.CREEPER_WALL_HEAD.getDefaultState();
+                    state = Blocks.CREEPER_WALL_HEAD.defaultBlockState();
                 }
-                else if (typeFromData == SkullBlock.Type.DRAGON)
+                else if (typeFromData == SkullBlock.Types.DRAGON)
                 {
-                    state = Blocks.DRAGON_WALL_HEAD.getDefaultState();
+                    state = Blocks.DRAGON_WALL_HEAD.defaultBlockState();
                 }
 
-                state = state.with(WallSkullBlock.FACING, facing);
+                state = state.setValue(WallSkullBlock.FACING, facing);
             }
         }
 
@@ -451,22 +451,22 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_STAIRS = (reader, state, pos) -> {
-        return state.with(StairsBlock.SHAPE, IMixinStairsBlock.invokeGetStairShape(state, reader, pos));
+        return state.setValue(StairBlock.SHAPE, IMixinStairsBlock.invokeGetStairShape(state, reader, pos));
     };
 
     public static final IStateFixer FIXER_STEM = (reader, state, pos) -> {
         StemBlock stem = (StemBlock) state.getBlock();
-        GourdBlock crop = stem.getGourdBlock();
+        StemGrownBlock crop = stem.getFruit();
 
         for (Direction side : fi.dy.masa.malilib.util.PositionUtils.HORIZONTAL_DIRECTIONS)
         {
-            BlockPos posAdj = pos.offset(side);
+            BlockPos posAdj = pos.relative(side);
             BlockState stateAdj = reader.getBlockState(posAdj);
             Block blockAdj = stateAdj.getBlock();
 
             if (blockAdj == crop || (stem == Blocks.PUMPKIN_STEM && blockAdj == Blocks.CARVED_PUMPKIN))
             {
-                return crop.getAttachedStem().getDefaultState().with(AttachedStemBlock.FACING, side);
+                return crop.getAttachedStem().defaultBlockState().setValue(AttachedStemBlock.FACING, side);
             }
         }
 
@@ -474,36 +474,36 @@ public class SchematicConversionFixers
     };
 
     public static final IStateFixer FIXER_TRIPWIRE = (reader, state, pos) -> {
-        TripwireBlock wire = (TripwireBlock) state.getBlock();
+        TripWireBlock wire = (TripWireBlock) state.getBlock();
 
         return state
-                .with(TripwireBlock.NORTH, ((TripwireBlock) wire).shouldConnectTo(reader.getBlockState(pos.north()), Direction.NORTH))
-                .with(TripwireBlock.SOUTH, ((TripwireBlock) wire).shouldConnectTo(reader.getBlockState(pos.south()), Direction.SOUTH))
-                .with(TripwireBlock.WEST, ((TripwireBlock) wire).shouldConnectTo(reader.getBlockState(pos.west()), Direction.WEST))
-                .with(TripwireBlock.EAST, ((TripwireBlock) wire).shouldConnectTo(reader.getBlockState(pos.east()), Direction.EAST));
+                .setValue(TripWireBlock.NORTH, ((TripWireBlock) wire).shouldConnectTo(reader.getBlockState(pos.north()), Direction.NORTH))
+                .setValue(TripWireBlock.SOUTH, ((TripWireBlock) wire).shouldConnectTo(reader.getBlockState(pos.south()), Direction.SOUTH))
+                .setValue(TripWireBlock.WEST, ((TripWireBlock) wire).shouldConnectTo(reader.getBlockState(pos.west()), Direction.WEST))
+                .setValue(TripWireBlock.EAST, ((TripWireBlock) wire).shouldConnectTo(reader.getBlockState(pos.east()), Direction.EAST));
     };
 
     public static final IStateFixer FIXER_VINE = (reader, state, pos) -> {
         VineBlock vine = (VineBlock) state.getBlock();
-        return state.with(VineBlock.UP, ((IMixinVineBlock) vine).invokeShouldConnectUp(reader, pos.up(), Direction.UP));
+        return state.setValue(VineBlock.UP, ((IMixinVineBlock) vine).invokeShouldConnectUp(reader, pos.above(), Direction.UP));
     };
 
-    private static boolean getIsRepeaterPoweredOnSide(BlockView reader, BlockPos pos, BlockState stateRepeater)
+    private static boolean getIsRepeaterPoweredOnSide(BlockGetter reader, BlockPos pos, BlockState stateRepeater)
     {
-        Direction facing = stateRepeater.get(RepeaterBlock.FACING);
-        Direction sideLeft = facing.rotateYCounterclockwise();
-        Direction sideRight = facing.rotateYClockwise();
+        Direction facing = stateRepeater.getValue(RepeaterBlock.FACING);
+        Direction sideLeft = facing.getCounterClockWise();
+        Direction sideRight = facing.getClockWise();
 
-        return getRepeaterPowerOnSide(reader, pos.offset(sideLeft) , sideLeft ) > 0 ||
-               getRepeaterPowerOnSide(reader, pos.offset(sideRight), sideRight) > 0;
+        return getRepeaterPowerOnSide(reader, pos.relative(sideLeft) , sideLeft ) > 0 ||
+               getRepeaterPowerOnSide(reader, pos.relative(sideRight), sideRight) > 0;
     }
 
-    private static int getRepeaterPowerOnSide(BlockView reader, BlockPos pos, Direction side)
+    private static int getRepeaterPowerOnSide(BlockGetter reader, BlockPos pos, Direction side)
     {
         BlockState state = reader.getBlockState(pos);
         Block block = state.getBlock();
 
-        if (AbstractRedstoneGateBlock.isRedstoneGate(state))
+        if (DiodeBlock.isDiode(state))
         {
             if (block == Blocks.REDSTONE_BLOCK)
             {
@@ -511,7 +511,7 @@ public class SchematicConversionFixers
             }
             else
             {
-                return block == Blocks.REDSTONE_WIRE ? state.get(RedstoneWireBlock.POWER) : state.getStrongRedstonePower(reader, pos, side);
+                return block == Blocks.REDSTONE_WIRE ? state.getValue(RedStoneWireBlock.POWER) : state.getDirectSignal(reader, pos, side);
             }
         }
         else

@@ -1,7 +1,7 @@
 package fi.dy.masa.litematica.gui;
 
 import javax.annotation.Nullable;
-import net.minecraft.client.util.math.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.malilib.gui.GuiTextFieldGeneric;
 import fi.dy.masa.malilib.gui.Message.MessageType;
@@ -31,7 +31,7 @@ public abstract class GuiSchematicSaveBase extends GuiSchematicBrowserBase imple
 
         this.schematic = schematic;
 
-        this.textField = new GuiTextFieldGeneric(10, 32, 160, 20, this.textRenderer);
+        this.textField = new GuiTextFieldGeneric(10, 32, 160, 20, this.font);
         this.textField.setMaxLength(256);
         this.textField.setFocused(true);
 
@@ -50,10 +50,10 @@ public abstract class GuiSchematicSaveBase extends GuiSchematicBrowserBase imple
         super.initGui();
 
         boolean focused = this.textField.isFocused();
-        String text = this.textField.getText();
+        String text = this.textField.getValue();
         int pos = this.textField.getCursorPosition();
-        this.textField = new GuiTextFieldGeneric(10, 32, this.width - 196, 20, this.textRenderer);
-        this.textField.setText(text);
+        this.textField = new GuiTextFieldGeneric(10, 32, this.width - 196, 20, this.font);
+        this.textField.setValue(text);
         this.textField.setCursorPosition(pos);
         this.textField.setFocused(focused);
 
@@ -96,13 +96,13 @@ public abstract class GuiSchematicSaveBase extends GuiSchematicBrowserBase imple
     protected void setTextFieldText(String text)
     {
         this.lastText = text;
-        this.textField.setText(text);
+        this.textField.setValue(text);
         this.textField.setCursorPositionEnd();
     }
 
     protected String getTextFieldText()
     {
-        return this.textField.getText();
+        return this.textField.getValue();
     }
 
     protected abstract IButtonActionListener createButtonListener(ButtonType type);
@@ -136,7 +136,7 @@ public abstract class GuiSchematicSaveBase extends GuiSchematicBrowserBase imple
     }
 
     @Override
-    public void drawContents(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void drawContents(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
         super.drawContents(matrixStack, mouseX, mouseY, partialTicks);
 

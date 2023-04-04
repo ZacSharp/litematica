@@ -1,20 +1,20 @@
 package fi.dy.masa.litematica.world;
 
 import javax.annotation.Nullable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.world.LightType;
-import net.minecraft.world.chunk.ChunkNibbleArray;
-import net.minecraft.world.chunk.ChunkProvider;
-import net.minecraft.world.chunk.light.ChunkLightingView;
-import net.minecraft.world.chunk.light.LightingProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.chunk.DataLayer;
+import net.minecraft.world.level.chunk.LightChunkGetter;
+import net.minecraft.world.level.lighting.LayerLightEventListener;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 
-public class FakeLightingProvider extends LightingProvider
+public class FakeLightingProvider extends LevelLightEngine
 {
     private final FakeLightingView lightingView;
 
-    public FakeLightingProvider(ChunkProvider chunkProvider)
+    public FakeLightingProvider(LightChunkGetter chunkProvider)
     {
         super(chunkProvider, false, false);
 
@@ -22,28 +22,28 @@ public class FakeLightingProvider extends LightingProvider
     }
 
     @Override
-    public ChunkLightingView get(LightType type)
+    public LayerLightEventListener getLayerListener(LightLayer type)
     {
         return this.lightingView;
     }
 
     @Override
-    public int getLight(BlockPos pos, int defaultValue)
+    public int getRawBrightness(BlockPos pos, int defaultValue)
     {
         return 15;
     }
 
-    public static class FakeLightingView implements ChunkLightingView
+    public static class FakeLightingView implements LayerLightEventListener
     {
         @Nullable
         @Override
-        public ChunkNibbleArray getLightSection(ChunkSectionPos pos)
+        public DataLayer getDataLayerData(SectionPos pos)
         {
             return null;
         }
 
         @Override
-        public int getLightLevel(BlockPos pos)
+        public int getLightValue(BlockPos pos)
         {
             return 15;
         }
@@ -54,30 +54,30 @@ public class FakeLightingProvider extends LightingProvider
         }
 
         @Override
-        public void addLightSource(BlockPos pos, int i)
+        public void onBlockEmissionIncrease(BlockPos pos, int i)
         {
         }
 
         @Override
-        public boolean hasUpdates()
+        public boolean hasLightWork()
         {
             return false;
         }
 
         @Override
-        public int doLightUpdates(int i, boolean bl, boolean bl2)
+        public int runUpdates(int i, boolean bl, boolean bl2)
         {
             return 0;
         }
 
         @Override
-        public void setSectionStatus(ChunkSectionPos pos, boolean notReady)
+        public void updateSectionStatus(SectionPos pos, boolean notReady)
         {
             // NO-OP
         }
 
         @Override
-        public void setColumnEnabled(ChunkPos chunkPos, boolean bl)
+        public void enableLightSources(ChunkPos chunkPos, boolean bl)
         {
         }
     }

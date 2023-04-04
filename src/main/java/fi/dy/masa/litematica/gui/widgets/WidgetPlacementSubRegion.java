@@ -3,10 +3,10 @@ package fi.dy.masa.litematica.gui.widgets;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import com.google.common.collect.ImmutableList;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.gui.GuiSubRegionConfiguration;
 import fi.dy.masa.litematica.gui.Icons;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
@@ -77,7 +77,7 @@ public class WidgetPlacementSubRegion extends WidgetListEntryBase<SubRegionPlace
     }
 
     @Override
-    public void render(int mouseX, int mouseY, boolean selected, MatrixStack matrixStack)
+    public void render(int mouseX, int mouseY, boolean selected, PoseStack matrixStack)
     {
         RenderUtils.color(1f, 1f, 1f, 1f);
 
@@ -135,7 +135,7 @@ public class WidgetPlacementSubRegion extends WidgetListEntryBase<SubRegionPlace
     }
 
     @Override
-    public void postRenderHovered(int mouseX, int mouseY, boolean selected, MatrixStack matrixStack)
+    public void postRenderHovered(int mouseX, int mouseY, boolean selected, PoseStack matrixStack)
     {
         LitematicaSchematic schematic = this.schematicPlacement.getSchematic();
         File schematicFile = schematic.getFile();
@@ -155,7 +155,7 @@ public class WidgetPlacementSubRegion extends WidgetListEntryBase<SubRegionPlace
 
             BlockPos o = this.placement.getPos();
             o = PositionUtils.getTransformedBlockPos(o, this.schematicPlacement.getMirror(), this.schematicPlacement.getRotation());
-            o = o.add(this.schematicPlacement.getOrigin());
+            o = o.offset(this.schematicPlacement.getOrigin());
             String strOrigin = String.format("x: %d, y: %d, z: %d", o.getX(), o.getY(), o.getZ());
             text.add(StringUtils.translate("litematica.gui.label.schematic_placement.origin", strOrigin));
 

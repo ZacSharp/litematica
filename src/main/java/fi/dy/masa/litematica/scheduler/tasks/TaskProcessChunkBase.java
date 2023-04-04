@@ -5,10 +5,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import com.google.common.collect.ArrayListMultimap;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
 import fi.dy.masa.litematica.render.infohud.InfoHud;
 import fi.dy.masa.litematica.selection.Box;
 import fi.dy.masa.litematica.util.PositionUtils;
@@ -20,15 +20,15 @@ public abstract class TaskProcessChunkBase extends TaskBase
 {
     protected final ArrayListMultimap<ChunkPos, IntBoundingBox> boxesInChunks = ArrayListMultimap.create();
     protected final Set<ChunkPos> requiredChunks = new HashSet<>();
-    protected final ClientWorld clientWorld;
-    protected final World world;
+    protected final ClientLevel clientWorld;
+    protected final Level world;
     protected final boolean isClientWorld;
 
     protected TaskProcessChunkBase(String nameOnHud)
     {
-        this.clientWorld = this.mc.world;
+        this.clientWorld = this.mc.level;
         this.world = WorldUtils.getBestWorld(this.mc);
-        this.isClientWorld = (this.world == this.mc.world);
+        this.isClientWorld = (this.world == this.mc.level);
         this.name = StringUtils.translate(nameOnHud);
 
         InfoHud.getInstance().addInfoHudRenderer(this, true);

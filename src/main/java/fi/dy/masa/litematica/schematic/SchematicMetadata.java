@@ -1,9 +1,9 @@
 package fi.dy.masa.litematica.schematic;
 
 import javax.annotation.Nullable;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
 import fi.dy.masa.malilib.util.Constants;
 import fi.dy.masa.malilib.util.NBTUtils;
 
@@ -147,9 +147,9 @@ public class SchematicMetadata
         this.timeModified = System.currentTimeMillis();
     }
 
-    public NbtCompound writeToNBT()
+    public CompoundTag writeToNBT()
     {
-        NbtCompound nbt = new NbtCompound();
+        CompoundTag nbt = new CompoundTag();
 
         nbt.putString("Name", this.name);
         nbt.putString("Author", this.author);
@@ -169,7 +169,7 @@ public class SchematicMetadata
         return nbt;
     }
 
-    public void readFromNBT(NbtCompound nbt)
+    public void readFromNBT(CompoundTag nbt)
     {
         this.name = nbt.getString("Name");
         this.author = nbt.getString("Author");
@@ -181,7 +181,7 @@ public class SchematicMetadata
         this.timeModified = nbt.getLong("TimeModified");
 
         Vec3i size = NBTUtils.readBlockPos(nbt.getCompound("EnclosingSize"));
-        this.enclosingSize = size != null ? size : BlockPos.ORIGIN;
+        this.enclosingSize = size != null ? size : BlockPos.ZERO;
 
         if (nbt.contains("PreviewImageData", Constants.NBT.TAG_INT_ARRAY))
         {

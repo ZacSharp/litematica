@@ -9,21 +9,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.config.Hotkeys;
 import fi.dy.masa.litematica.data.DataManager;
@@ -103,7 +103,7 @@ public class SchematicPlacementManager
         //System.out.printf("processQueuedChunks, size: %d\n", this.chunksToRebuild.size());
         if (this.chunksToRebuild.isEmpty() == false)
         {
-            ClientWorld worldClient = MinecraftClient.getInstance().world;
+            ClientLevel worldClient = Minecraft.getInstance().level;
 
             if (worldClient == null)
             {
@@ -139,7 +139,7 @@ public class SchematicPlacementManager
                     worldSchematic.getChunkProvider().loadChunk(pos.x, pos.z);
                 }
 
-                if (worldSchematic.getChunkProvider().isChunkLoaded(pos.x, pos.z))
+                if (worldSchematic.getChunkProvider().hasChunk(pos.x, pos.z))
                 {
                     //System.out.printf("placing at %s\n", pos);
                     Collection<SchematicPlacement> placements = this.schematicsTouchingChunk.get(pos);
@@ -188,7 +188,7 @@ public class SchematicPlacementManager
 
     private void unloadSchematicChunk(WorldSchematic worldSchematic, int chunkX, int chunkZ)
     {
-        if (worldSchematic.getChunkProvider().isChunkLoaded(chunkX, chunkZ))
+        if (worldSchematic.getChunkProvider().hasChunk(chunkX, chunkZ))
         {
             //System.out.printf("unloading chunk at %d, %d\n", chunkX, chunkZ);
             worldSchematic.scheduleChunkRenders(chunkX, chunkZ);
@@ -460,8 +460,8 @@ public class SchematicPlacementManager
     private void updateTouchedBoxesInChunk(ChunkPos pos)
     {
         WorldSchematic world = SchematicWorldHandler.getSchematicWorld();
-        int minChunkY = world != null ? world.getBottomSectionCoord() : -4;
-        int maxChunkY = world != null ? world.getTopSectionCoord() : 19;
+        int minChunkY = world != null ? world.getMinSection() : -4;
+        int maxChunkY = world != null ? world.getMaxSection() : 19;
 
         for (int y = minChunkY; y < maxChunkY; ++y)
         {
@@ -541,7 +541,7 @@ public class SchematicPlacementManager
         }
     }
 
-    public boolean changeSelection(World world, Entity entity, int maxDistance)
+    public boolean changeSelection(Level world, Entity entity, int maxDistance)
     {
         if (this.schematicPlacements.size() > 0)
         {
@@ -574,14 +574,14 @@ public class SchematicPlacementManager
         return false;
     }
 
-    public void setPositionOfCurrentSelectionToRayTrace(MinecraftClient mc, double maxDistance)
+    public void setPositionOfCurrentSelectionToRayTrace(Minecraft mc, double maxDistance)
     {
         SchematicPlacement schematicPlacement = this.getSelectedSchematicPlacement();
 
         if (schematicPlacement != null)
         {
             Entity entity = fi.dy.masa.malilib.util.EntityUtils.getCameraEntity();
-            HitResult trace = RayTraceUtils.getRayTraceFromEntity(mc.world, entity, false, maxDistance);
+            HitResult trace = RayTraceUtils.getRayTraceFromEntity(mc.level, entity, false, maxDistance);
 
             if (trace.getType() != HitResult.Type.BLOCK)
             {
@@ -591,16 +591,16 @@ public class SchematicPlacementManager
             BlockPos pos = ((BlockHitResult) trace).getBlockPos();
 
             // Sneaking puts the position inside the targeted block, not sneaking puts it against the targeted face
-            if (mc.player.isSneaking() == false)
+            if (mc.player.isShiftKeyDown() == false)
             {
-                pos = pos.offset(((BlockHitResult) trace).getSide());
+                pos = pos.relative(((BlockHitResult) trace).getDirection());
             }
 
             this.setPositionOfCurrentSelectionTo(pos, mc);
         }
     }
 
-    public void setPositionOfCurrentSelectionTo(BlockPos pos, MinecraftClient mc)
+    public void setPositionOfCurrentSelectionTo(BlockPos pos, Minecraft mc)
     {
         SchematicPlacement schematicPlacement = this.getSelectedSchematicPlacement();
 
@@ -656,30 +656,30 @@ public class SchematicPlacementManager
             {
                 // getPos returns a relative position, but moveSubRegionTo takes an absolute position...
                 BlockPos old = PositionUtils.getTransformedBlockPos(placement.getPos(), schematicPlacement.getMirror(), schematicPlacement.getRotation());
-                old = old.add(schematicPlacement.getOrigin());
+                old = old.offset(schematicPlacement.getOrigin());
 
-                schematicPlacement.moveSubRegionTo(placement.getName(), old.offset(direction, amount), InfoUtils.INFO_MESSAGE_CONSUMER);
+                schematicPlacement.moveSubRegionTo(placement.getName(), old.relative(direction, amount), InfoUtils.INFO_MESSAGE_CONSUMER);
             }
             // Moving the origin point
             else
             {
                 BlockPos old = schematicPlacement.getOrigin();
-                schematicPlacement.setOrigin(old.offset(direction, amount), InfoUtils.INFO_MESSAGE_CONSUMER);
+                schematicPlacement.setOrigin(old.relative(direction, amount), InfoUtils.INFO_MESSAGE_CONSUMER);
             }
         }
     }
 
-    public void pasteCurrentPlacementToWorld(MinecraftClient mc)
+    public void pasteCurrentPlacementToWorld(Minecraft mc)
     {
         this.pastePlacementToWorld(this.getSelectedSchematicPlacement(), mc);
     }
 
-    public void pastePlacementToWorld(final SchematicPlacement schematicPlacement, MinecraftClient mc)
+    public void pastePlacementToWorld(final SchematicPlacement schematicPlacement, Minecraft mc)
     {
         this.pastePlacementToWorld(schematicPlacement, true, mc);
     }
 
-    public void pastePlacementToWorld(final SchematicPlacement schematicPlacement, boolean changedBlocksOnly, MinecraftClient mc)
+    public void pastePlacementToWorld(final SchematicPlacement schematicPlacement, boolean changedBlocksOnly, Minecraft mc)
     {
         this.pastePlacementToWorld(schematicPlacement, changedBlocksOnly, true, mc);
     }
@@ -711,7 +711,7 @@ public class SchematicPlacementManager
         }
     }
 
-    public void pastePlacementToWorld(final SchematicPlacement schematicPlacement, boolean changedBlocksOnly, boolean printMessage, MinecraftClient mc)
+    public void pastePlacementToWorld(final SchematicPlacement schematicPlacement, boolean changedBlocksOnly, boolean printMessage, Minecraft mc)
     {
         if (mc.player != null && EntityUtils.isCreativeMode(mc.player))
         {
@@ -732,7 +732,7 @@ public class SchematicPlacementManager
                     GuiConfirmAction screen = new GuiConfirmAction(320, "Confirm paste to command files", cl, null, "Are you sure you want to paste the current placement as setblock commands into command/mcfunction files?");
                     GuiBase.openGui(screen);
                 }
-                else if (mc.isIntegratedServerRunning())
+                else if (mc.hasSingleplayerServer())
                 {
                     TaskPasteSchematicPerChunkBase task = new TaskPasteSchematicPerChunkDirect(Collections.singletonList(schematicPlacement), range, changedBlocksOnly);
                     TaskScheduler.getInstanceServer().scheduleTask(task, 20);

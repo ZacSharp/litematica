@@ -5,13 +5,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
+import net.minecraft.util.Mth;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import fi.dy.masa.litematica.util.BlockInfoListType;
 import fi.dy.masa.malilib.interfaces.ICompletionListener;
 import fi.dy.masa.malilib.util.JsonUtils;
-import net.minecraft.util.math.MathHelper;
 
 public abstract class MaterialListBase implements IMaterialList
 {
@@ -186,7 +186,7 @@ public abstract class MaterialListBase implements IMaterialList
 
     public void setMultiplier(int multiplier)
     {
-        this.multiplier = MathHelper.clamp(multiplier, 1, Integer.MAX_VALUE);
+        this.multiplier = Mth.clamp(multiplier, 1, Integer.MAX_VALUE);
     }
 
     public void updateCounts()

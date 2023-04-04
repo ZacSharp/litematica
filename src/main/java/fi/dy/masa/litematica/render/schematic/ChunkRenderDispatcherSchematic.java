@@ -1,8 +1,8 @@
 package fi.dy.masa.litematica.render.schematic;
 
 import javax.annotation.Nullable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import fi.dy.masa.litematica.world.WorldSchematic;
 
 public class ChunkRenderDispatcherSchematic
@@ -68,8 +68,8 @@ public class ChunkRenderDispatcherSchematic
 
     public void updateCameraPosition(double cameraX, double cameraZ)
     {
-        int int_1 = MathHelper.floor(cameraX) - 8;
-        int int_2 = MathHelper.floor(cameraZ) - 8;
+        int int_1 = Mth.floor(cameraX) - 8;
+        int int_2 = Mth.floor(cameraZ) - 8;
         int diameterX = this.sizeX * 16;
 
         for (int x = 0; x < this.sizeX; ++x)
@@ -82,7 +82,7 @@ public class ChunkRenderDispatcherSchematic
 
                 for (int y = 0; y < this.sizeY; ++y)
                 {
-                    int blockY = this.world.getBottomY() + y * 16;
+                    int blockY = this.world.getMinBuildHeight() + y * 16;
                     this.renderers[this.getChunkIndex(x, y, z)].setPosition(blockX, blockY, blockZ);
                 }
             }
@@ -104,7 +104,7 @@ public class ChunkRenderDispatcherSchematic
 
     public void scheduleChunkRender(int chunkX, int chunkY, int chunkZ, boolean immediate)
     {
-        int bottomSectionY = this.world.getBottomY() >> 4;
+        int bottomSectionY = this.world.getMinBuildHeight() >> 4;
 
         if (chunkY >= bottomSectionY && chunkY < bottomSectionY + this.sizeY)
         {
@@ -119,14 +119,14 @@ public class ChunkRenderDispatcherSchematic
     @Nullable
     protected ChunkRendererSchematicVbo getChunkRenderer(BlockPos pos)
     {
-        int cx = MathHelper.floorDiv(pos.getX(), 16);
-        int cy = MathHelper.floorDiv(pos.getY() - this.world.getBottomY(), 16);
-        int cz = MathHelper.floorDiv(pos.getZ(), 16);
+        int cx = Mth.intFloorDiv(pos.getX(), 16);
+        int cy = Mth.intFloorDiv(pos.getY() - this.world.getMinBuildHeight(), 16);
+        int cz = Mth.intFloorDiv(pos.getZ(), 16);
 
         if (cy >= 0 && cy < this.sizeY)
         {
-            cx = MathHelper.floorMod(cx, this.sizeX);
-            cz = MathHelper.floorMod(cz, this.sizeZ);
+            cx = Mth.positiveModulo(cx, this.sizeX);
+            cz = Mth.positiveModulo(cz, this.sizeZ);
 
             return this.renderers[this.getChunkIndex(cx, cy, cz)];
         }

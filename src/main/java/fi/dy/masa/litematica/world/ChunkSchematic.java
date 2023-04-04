@@ -3,28 +3,28 @@ package fi.dy.masa.litematica.world;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockEntityProvider;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BuiltinBiomes;
-import net.minecraft.world.biome.source.BiomeArray;
-import net.minecraft.world.biome.source.FixedBiomeSource;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.SectionPos;
+import net.minecraft.data.worldgen.biome.Biomes;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.FixedBiomeSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkBiomeContainer;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
-public class ChunkSchematic extends WorldChunk
+public class ChunkSchematic extends LevelChunk
 {
-    private static final BlockState AIR = Blocks.AIR.getDefaultState();
+    private static final BlockState AIR = Blocks.AIR.defaultBlockState();
 
     private final Int2ObjectOpenHashMap<List<Entity>> entityLists = new Int2ObjectOpenHashMap<>();
     private final long timeCreated;
@@ -33,14 +33,14 @@ public class ChunkSchematic extends WorldChunk
     private int entityCount;
     private boolean isEmpty = true;
 
-    public ChunkSchematic(World worldIn, ChunkPos pos)
+    public ChunkSchematic(Level worldIn, ChunkPos pos)
     {
-        super(worldIn, pos, new BiomeArray(worldIn.getRegistryManager().get(Registry.BIOME_KEY),
-                                           worldIn, pos, new FixedBiomeSource(BuiltinBiomes.THE_VOID)));
+        super(worldIn, pos, new ChunkBiomeContainer(worldIn.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY),
+                                           worldIn, pos, new FixedBiomeSource(Biomes.THE_VOID)));
 
-        this.timeCreated = worldIn.getTime();
-        this.bottomY = worldIn.getBottomY();
-        this.topY = worldIn.getTopY();
+        this.timeCreated = worldIn.getGameTime();
+        this.bottomY = worldIn.getMinBuildHeight();
+        this.topY = worldIn.getMaxBuildHeight();
     }
 
     @Override
@@ -52,13 +52,13 @@ public class ChunkSchematic extends WorldChunk
         int cy = this.getSectionIndex(y);
         y &= 0xF;
 
-        ChunkSection[] sections = this.getSectionArray();
+        LevelChunkSection[] sections = this.getSections();
 
         if (cy >= 0 && cy < sections.length)
         {
-            ChunkSection chunkSection = sections[cy];
+            LevelChunkSection chunkSection = sections[cy];
 
-            if (ChunkSection.isEmpty(chunkSection) == false)
+            if (LevelChunkSection.isEmpty(chunkSection) == false)
             {
                 return chunkSection.getBlockState(x, y, z);
             }
@@ -85,7 +85,7 @@ public class ChunkSchematic extends WorldChunk
 
             Block blockNew = state.getBlock();
             Block blockOld = stateOld.getBlock();
-            ChunkSection section = this.getSectionArray()[cy];
+            LevelChunkSection section = this.getSections()[cy];
 
             if (section == EMPTY_SECTION)
             {
@@ -94,8 +94,8 @@ public class ChunkSchematic extends WorldChunk
                     return null;
                 }
 
-                section = new ChunkSection(ChunkSectionPos.getSectionCoord(y));
-                this.getSectionArray()[cy] = section;
+                section = new LevelChunkSection(SectionPos.blockToSectionCoord(y));
+                this.getSections()[cy] = section;
             }
 
             y &= 0xF;
@@ -109,7 +109,7 @@ public class ChunkSchematic extends WorldChunk
 
             if (blockOld != blockNew)
             {
-                this.getWorld().removeBlockEntity(pos);
+                this.getLevel().removeBlockEntity(pos);
             }
 
             if (section.getBlockState(x, y, z).getBlock() != blockNew)
@@ -118,22 +118,22 @@ public class ChunkSchematic extends WorldChunk
             }
             else
             {
-                if (state.hasBlockEntity() && blockNew instanceof BlockEntityProvider)
+                if (state.hasBlockEntity() && blockNew instanceof EntityBlock)
                 {
-                    BlockEntity te = this.getBlockEntity(pos, WorldChunk.CreationType.CHECK);
+                    BlockEntity te = this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
 
                     if (te == null)
                     {
-                        te = ((BlockEntityProvider) blockNew).createBlockEntity(pos, state);
+                        te = ((EntityBlock) blockNew).newBlockEntity(pos, state);
 
                         if (te != null)
                         {
-                            this.getWorld().getWorldChunk(pos).setBlockEntity(te);
+                            this.getLevel().getChunkAt(pos).setBlockEntity(te);
                         }
                     }
                 }
 
-                this.markDirty();
+                this.markUnsaved();
 
                 return stateOld;
             }
@@ -144,7 +144,7 @@ public class ChunkSchematic extends WorldChunk
     @Override
     public void addEntity(Entity entity)
     {
-        int chunkY = MathHelper.floor(entity.getY()) >> 4;
+        int chunkY = Mth.floor(entity.getY()) >> 4;
         List<Entity> list = this.entityLists.computeIfAbsent(chunkY, (y) -> new ArrayList<>());
         list.add(entity);
         ++this.entityCount;

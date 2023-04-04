@@ -3,9 +3,9 @@ package fi.dy.masa.litematica.render.schematic;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+import net.minecraft.world.phys.Vec3;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Doubles;
-import net.minecraft.util.math.Vec3d;
 
 public class ChunkRenderTaskSchematic implements Comparable<ChunkRenderTaskSchematic>
 {
@@ -13,14 +13,14 @@ public class ChunkRenderTaskSchematic implements Comparable<ChunkRenderTaskSchem
     private final ChunkRenderTaskSchematic.Type type;
     private final List<Runnable> listFinishRunnables = Lists.<Runnable>newArrayList();
     private final ReentrantLock lock = new ReentrantLock();
-    private final Supplier<Vec3d> cameraPosSupplier;
+    private final Supplier<Vec3> cameraPosSupplier;
     private final double distanceSq;
     private BufferBuilderCache bufferBuilderCache;
     private ChunkRenderDataSchematic chunkRenderData;
     private ChunkRenderTaskSchematic.Status status = ChunkRenderTaskSchematic.Status.PENDING;
     private boolean finished;
 
-    public ChunkRenderTaskSchematic(ChunkRendererSchematicVbo renderChunkIn, ChunkRenderTaskSchematic.Type typeIn, Supplier<Vec3d> cameraPosSupplier, double distanceSqIn)
+    public ChunkRenderTaskSchematic(ChunkRendererSchematicVbo renderChunkIn, ChunkRenderTaskSchematic.Type typeIn, Supplier<Vec3> cameraPosSupplier, double distanceSqIn)
     {
         this.chunkRenderer = renderChunkIn;
         this.type = typeIn;
@@ -28,7 +28,7 @@ public class ChunkRenderTaskSchematic implements Comparable<ChunkRenderTaskSchem
         this.distanceSq = distanceSqIn;
     }
 
-    public Supplier<Vec3d> getCameraPosSupplier()
+    public Supplier<Vec3> getCameraPosSupplier()
     {
         return this.cameraPosSupplier;
     }

@@ -3,11 +3,11 @@ package fi.dy.masa.litematica.render.infohud;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
@@ -254,10 +254,10 @@ public class ToolHud extends InfoHud
                 lines.add(StringUtils.translate("litematica.hud.area_selection.origin", green + str + rst));
 
                 BlockState state = mode.getPrimaryBlock();
-                ItemStack stack = this.mc.player.getMainHandStack();
+                ItemStack stack = this.mc.player.getMainHandItem();
 
                 if (state != null && mode == ToolMode.REBUILD &&
-                    (stack.isEmpty() || EntityUtils.hasToolItemInHand(this.mc.player, Hand.MAIN_HAND)))
+                    (stack.isEmpty() || EntityUtils.hasToolItemInHand(this.mc.player, InteractionHand.MAIN_HAND)))
                 {
                     lines.add(StringUtils.translate("litematica.tool_hud.block_1", this.getBlockString(state)));
                 }
@@ -274,7 +274,7 @@ public class ToolHud extends InfoHud
 
                     or = placement.getPos();
                     or = PositionUtils.getTransformedBlockPos(or, schematicPlacement.getMirror(), schematicPlacement.getRotation());
-                    or = or.add(schematicPlacement.getOrigin());
+                    or = or.offset(schematicPlacement.getOrigin());
                     str = String.format("%d, %d, %d", or.getX(), or.getY(), or.getZ());
                     lines.add(StringUtils.translate("litematica.hud.schematic_placement.sub_region_origin", green + str + rst));
                 }

@@ -6,14 +6,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.core.Vec3i;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import net.minecraft.client.gui.DrawableHelper;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3i;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.gui.GuiSchematicBrowserBase;
@@ -30,7 +30,7 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
     protected static final FileFilter SCHEMATIC_FILTER = new FileFilterSchematics();
 
     protected final Map<File, SchematicMetadata> cachedMetadata = new HashMap<>();
-    protected final Map<File, Pair<Identifier, NativeImageBackedTexture>> cachedPreviewImages = new HashMap<>();
+    protected final Map<File, Pair<ResourceLocation, DynamicTexture>> cachedPreviewImages = new HashMap<>();
     protected final GuiSchematicBrowserBase parent;
     protected final int infoWidth;
     protected final int infoHeight;
@@ -73,12 +73,12 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
     }
 
     @Override
-    protected void drawAdditionalContents(int mouseX, int mouseY, MatrixStack matrixStack)
+    protected void drawAdditionalContents(int mouseX, int mouseY, PoseStack matrixStack)
     {
         this.drawSelectedSchematicInfo(this.getLastSelectedEntry(), matrixStack);
     }
 
-    protected void drawSelectedSchematicInfo(@Nullable DirectoryEntry entry, MatrixStack matrixStack)
+    protected void drawSelectedSchematicInfo(@Nullable DirectoryEntry entry, PoseStack matrixStack)
     {
         int x = this.posX + this.totalWidth - this.infoWidth;
         int y = this.posY;
@@ -168,13 +168,13 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
             */
             //y += 12;
 
-            Pair<Identifier, NativeImageBackedTexture> pair = this.cachedPreviewImages.get(entry.getFullPath());
+            Pair<ResourceLocation, DynamicTexture> pair = this.cachedPreviewImages.get(entry.getFullPath());
 
             if (pair != null)
             {
                 y += 14;
 
-                int iconSize = pair.getRight().getImage().getWidth();
+                int iconSize = pair.getRight().getPixels().getWidth();
                 boolean needsScaling = height < this.infoHeight;
 
                 RenderUtils.color(1f, 1f, 1f, 1f);
@@ -187,7 +187,7 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
                 RenderUtils.drawOutlinedBox(x + 4, y, iconSize, iconSize, 0xA0000000, COLOR_HORIZONTAL_BAR);
 
                 this.bindTexture(pair.getLeft());
-                DrawableHelper.drawTexture(matrixStack, x + 4, y, 0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
+                GuiComponent.blit(matrixStack, x + 4, y, 0.0F, 0.0F, iconSize, iconSize, iconSize, iconSize);
             }
         }
     }
@@ -225,9 +225,9 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
 
     private void clearPreviewImages()
     {
-        for (Pair<Identifier, NativeImageBackedTexture> pair : this.cachedPreviewImages.values())
+        for (Pair<ResourceLocation, DynamicTexture> pair : this.cachedPreviewImages.values())
         {
-            this.mc.getTextureManager().destroyTexture(pair.getLeft());
+            this.mc.getTextureManager().release(pair.getLeft());
         }
     }
 
@@ -244,9 +244,9 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
                 try
                 {
                     NativeImage image = new NativeImage(size, size, false);
-                    NativeImageBackedTexture tex = new NativeImageBackedTexture(image);
-                    Identifier rl = new Identifier("litematica", DigestUtils.sha1Hex(file.getAbsolutePath()));
-                    this.mc.getTextureManager().registerTexture(rl, tex);
+                    DynamicTexture tex = new DynamicTexture(image);
+                    ResourceLocation rl = new ResourceLocation("litematica", DigestUtils.sha1Hex(file.getAbsolutePath()));
+                    this.mc.getTextureManager().register(rl, tex);
 
                     for (int y = 0, i = 0; y < size; ++y)
                     {
@@ -255,7 +255,7 @@ public class WidgetSchematicBrowser extends WidgetFileBrowserBase
                             int val = previewImageData[i++];
                             // Swap the color channels from ARGB to ABGR
                             val = (val & 0xFF00FF00) | (val & 0xFF0000) >> 16 | (val & 0xFF) << 16;
-                            image.setColor(x, y, val);
+                            image.setPixelRGBA(x, y, val);
                         }
                     }
 

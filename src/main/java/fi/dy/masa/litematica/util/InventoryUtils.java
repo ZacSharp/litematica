@@ -2,18 +2,18 @@ package fi.dy.masa.litematica.util;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.PlayerScreenHandler;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.Hand;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.malilib.gui.GuiBase;
 
@@ -33,7 +33,7 @@ public class InventoryUtils
             {
                 int slotNum = Integer.parseInt(str);
 
-                if (PlayerInventory.isValidHotbarIndex(slotNum) && PICK_BLOCKABLE_SLOTS.contains(slotNum) == false)
+                if (Inventory.isHotbarSlot(slotNum) && PICK_BLOCKABLE_SLOTS.contains(slotNum) == false)
                 {
                     PICK_BLOCKABLE_SLOTS.add(slotNum);
                 }
@@ -44,20 +44,20 @@ public class InventoryUtils
         }
     }
 
-    public static void setPickedItemToHand(ItemStack stack, MinecraftClient mc)
+    public static void setPickedItemToHand(ItemStack stack, Minecraft mc)
     {
-        int slotNum = mc.player.getInventory().getSlotWithStack(stack);
+        int slotNum = mc.player.getInventory().findSlotMatchingItem(stack);
         setPickedItemToHand(slotNum, stack, mc);
     }
 
-    public static void setPickedItemToHand(int sourceSlot, ItemStack stack, MinecraftClient mc)
+    public static void setPickedItemToHand(int sourceSlot, ItemStack stack, Minecraft mc)
     {
-        PlayerEntity player = mc.player;
-        PlayerInventory inventory = player.getInventory();
+        Player player = mc.player;
+        Inventory inventory = player.getInventory();
 
-        if (PlayerInventory.isValidHotbarIndex(sourceSlot))
+        if (Inventory.isHotbarSlot(sourceSlot))
         {
-            inventory.selectedSlot = sourceSlot;
+            inventory.selected = sourceSlot;
         }
         else
         {
@@ -68,7 +68,7 @@ public class InventoryUtils
 
             int hotbarSlot = sourceSlot;
 
-            if (sourceSlot == -1 || PlayerInventory.isValidHotbarIndex(sourceSlot) == false)
+            if (sourceSlot == -1 || Inventory.isHotbarSlot(sourceSlot) == false)
             {
                 hotbarSlot = getEmptyPickBlockableHotbarSlot(inventory);
             }
@@ -80,11 +80,11 @@ public class InventoryUtils
 
             if (hotbarSlot != -1)
             {
-                inventory.selectedSlot = hotbarSlot;
+                inventory.selected = hotbarSlot;
 
                 if (EntityUtils.isCreativeMode(player))
                 {
-                    inventory.main.set(hotbarSlot, stack.copy());
+                    inventory.items.set(hotbarSlot, stack.copy());
                 }
                 else
                 {
@@ -97,11 +97,11 @@ public class InventoryUtils
     }
 
     public static void schematicWorldPickBlock(ItemStack stack, BlockPos pos,
-                                               World schematicWorld, MinecraftClient mc)
+                                               Level schematicWorld, Minecraft mc)
     {
         if (stack.isEmpty() == false)
         {
-            PlayerInventory inv = mc.player.getInventory();
+            Inventory inv = mc.player.getInventory();
             stack = stack.copy();
 
             if (EntityUtils.isCreativeMode(mc.player))
@@ -111,20 +111,20 @@ public class InventoryUtils
                 // The creative mode pick block with NBT only works correctly
                 // if the server world doesn't have a TileEntity in that position.
                 // Otherwise it would try to write whatever that TE is into the picked ItemStack.
-                if (GuiBase.isCtrlDown() && te != null && mc.world.isAir(pos))
+                if (GuiBase.isCtrlDown() && te != null && mc.level.isEmptyBlock(pos))
                 {
                     ItemUtils.storeTEInStack(stack, te);
                 }
 
                 setPickedItemToHand(stack, mc);
-                mc.interactionManager.clickCreativeStack(mc.player.getStackInHand(Hand.MAIN_HAND), 36 + inv.selectedSlot);
+                mc.gameMode.handleCreativeModeItemAdd(mc.player.getItemInHand(InteractionHand.MAIN_HAND), 36 + inv.selected);
 
                 //return true;
             }
             else
             {
-                int slot = inv.getSlotWithStack(stack);
-                boolean shouldPick = inv.selectedSlot != slot;
+                int slot = inv.findSlotMatchingItem(stack);
+                boolean shouldPick = inv.selected != slot;
 
                 if (shouldPick && slot != -1)
                 {
@@ -132,11 +132,11 @@ public class InventoryUtils
                 }
                 else if (slot == -1 && Configs.Generic.PICK_BLOCK_SHULKERS.getBooleanValue())
                 {
-                    slot = findSlotWithBoxWithItem(mc.player.playerScreenHandler, stack, false);
+                    slot = findSlotWithBoxWithItem(mc.player.inventoryMenu, stack, false);
 
                     if (slot != -1)
                     {
-                        ItemStack boxStack = mc.player.playerScreenHandler.slots.get(slot).getStack();
+                        ItemStack boxStack = mc.player.inventoryMenu.slots.get(slot).getItem();
                         setPickedItemToHand(boxStack, mc);
                     }
                 }
@@ -146,13 +146,13 @@ public class InventoryUtils
         }
     }
 
-    private static int getPickBlockTargetSlot(PlayerEntity player)
+    private static int getPickBlockTargetSlot(Player player)
     {
         int slotNum;
 
-        if (PICK_BLOCKABLE_SLOTS.contains(player.getInventory().selectedSlot + 1))
+        if (PICK_BLOCKABLE_SLOTS.contains(player.getInventory().selected + 1))
         {
-            slotNum = player.getInventory().selectedSlot;
+            slotNum = player.getInventory().selected;
         }
         else
         {
@@ -172,15 +172,15 @@ public class InventoryUtils
         return slotNum;
     }
 
-    private static int getEmptyPickBlockableHotbarSlot(PlayerInventory inventory)
+    private static int getEmptyPickBlockableHotbarSlot(Inventory inventory)
     {
         for (int i = 0; i < PICK_BLOCKABLE_SLOTS.size(); ++i)
         {
             int slotNum = PICK_BLOCKABLE_SLOTS.get(i) - 1;
 
-            if (slotNum >= 0 && slotNum < inventory.main.size())
+            if (slotNum >= 0 && slotNum < inventory.items.size())
             {
-                ItemStack stack = inventory.main.get(slotNum);
+                ItemStack stack = inventory.items.get(slotNum);
 
                 if (stack.isEmpty())
                 {
@@ -194,7 +194,7 @@ public class InventoryUtils
 
     public static boolean doesShulkerBoxContainItem(ItemStack stack, ItemStack referenceItem)
     {
-        DefaultedList<ItemStack> items = fi.dy.masa.malilib.util.InventoryUtils.getStoredItems(stack);
+        NonNullList<ItemStack> items = fi.dy.masa.malilib.util.InventoryUtils.getStoredItems(stack);
 
         if (items.size() > 0)
         {
@@ -210,21 +210,21 @@ public class InventoryUtils
         return false;
     }
 
-    public static int findSlotWithBoxWithItem(ScreenHandler container, ItemStack stackReference, boolean reverse)
+    public static int findSlotWithBoxWithItem(AbstractContainerMenu container, ItemStack stackReference, boolean reverse)
     {
         final int startSlot = reverse ? container.slots.size() - 1 : 0;
         final int endSlot = reverse ? -1 : container.slots.size();
         final int increment = reverse ? -1 : 1;
-        final boolean isPlayerInv = container instanceof PlayerScreenHandler;
+        final boolean isPlayerInv = container instanceof InventoryMenu;
 
         for (int slotNum = startSlot; slotNum != endSlot; slotNum += increment)
         {
             Slot slot = container.slots.get(slotNum);
 
-            if ((isPlayerInv == false || fi.dy.masa.malilib.util.InventoryUtils.isRegularInventorySlot(slot.id, false)) &&
-                doesShulkerBoxContainItem(slot.getStack(), stackReference))
+            if ((isPlayerInv == false || fi.dy.masa.malilib.util.InventoryUtils.isRegularInventorySlot(slot.index, false)) &&
+                doesShulkerBoxContainItem(slot.getItem(), stackReference))
             {
-                return slot.id;
+                return slot.index;
             }
         }
 

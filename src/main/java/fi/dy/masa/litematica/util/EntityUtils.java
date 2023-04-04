@@ -5,19 +5,19 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
@@ -27,20 +27,20 @@ import fi.dy.masa.malilib.util.InventoryUtils;
 
 public class EntityUtils
 {
-    public static final Predicate<Entity> NOT_PLAYER = entity -> (entity instanceof PlayerEntity) == false;
+    public static final Predicate<Entity> NOT_PLAYER = entity -> (entity instanceof Player) == false;
 
-    public static boolean isCreativeMode(PlayerEntity player)
+    public static boolean isCreativeMode(Player player)
     {
-        return player.getAbilities().creativeMode;
+        return player.getAbilities().instabuild;
     }
 
     public static boolean hasToolItem(LivingEntity entity)
     {
-        return hasToolItemInHand(entity, Hand.MAIN_HAND) ||
-               hasToolItemInHand(entity, Hand.OFF_HAND);
+        return hasToolItemInHand(entity, InteractionHand.MAIN_HAND) ||
+               hasToolItemInHand(entity, InteractionHand.OFF_HAND);
     }
 
-    public static boolean hasToolItemInHand(LivingEntity entity, Hand hand)
+    public static boolean hasToolItemInHand(LivingEntity entity, InteractionHand hand)
     {
         // If the configured tool item has NBT data, then the NBT is compared, otherwise it's ignored
 
@@ -48,14 +48,14 @@ public class EntityUtils
 
         if (toolItem.isEmpty())
         {
-            return entity.getMainHandStack().isEmpty();
+            return entity.getMainHandItem().isEmpty();
         }
 
-        ItemStack stackHand = entity.getStackInHand(hand);
+        ItemStack stackHand = entity.getItemInHand(hand);
 
-        if (ItemStack.areItemsEqualIgnoreDamage(toolItem, stackHand))
+        if (ItemStack.isSame(toolItem, stackHand))
         {
-            return toolItem.hasNbt() == false || ItemUtils.areTagsEqualIgnoreDamage(toolItem, stackHand);
+            return toolItem.hasTag() == false || ItemUtils.areTagsEqualIgnoreDamage(toolItem, stackHand);
         }
 
         return false;
@@ -69,18 +69,18 @@ public class EntityUtils
      * @return
      */
     @Nullable
-    public static Hand getUsedHandForItem(PlayerEntity player, ItemStack stack)
+    public static InteractionHand getUsedHandForItem(Player player, ItemStack stack)
     {
-        Hand hand = null;
+        InteractionHand hand = null;
 
-        if (InventoryUtils.areStacksEqual(player.getMainHandStack(), stack))
+        if (InventoryUtils.areStacksEqual(player.getMainHandItem(), stack))
         {
-            hand = Hand.MAIN_HAND;
+            hand = InteractionHand.MAIN_HAND;
         }
-        else if (player.getMainHandStack().isEmpty() &&
-                 InventoryUtils.areStacksEqual(player.getOffHandStack(), stack))
+        else if (player.getMainHandItem().isEmpty() &&
+                 InventoryUtils.areStacksEqual(player.getOffhandItem(), stack))
         {
-            hand = Hand.OFF_HAND;
+            hand = InteractionHand.OFF_HAND;
         }
 
         return hand;
@@ -88,26 +88,26 @@ public class EntityUtils
 
     public static boolean areStacksEqualIgnoreDurability(ItemStack stack1, ItemStack stack2)
     {
-        return ItemStack.areItemsEqualIgnoreDamage(stack1, stack2) && ItemStack.areNbtEqual(stack1, stack2);
+        return ItemStack.isSame(stack1, stack2) && ItemStack.tagMatches(stack1, stack2);
     }
 
     public static Direction getHorizontalLookingDirection(Entity entity)
     {
-        return Direction.fromRotation(entity.getYaw());
+        return Direction.fromYRot(entity.getYRot());
     }
 
     public static Direction getVerticalLookingDirection(Entity entity)
     {
-        return entity.getPitch() > 0 ? Direction.DOWN : Direction.UP;
+        return entity.getXRot() > 0 ? Direction.DOWN : Direction.UP;
     }
 
     public static Direction getClosestLookingDirection(Entity entity)
     {
-        if (entity.getPitch() > 60.0f)
+        if (entity.getXRot() > 60.0f)
         {
             return Direction.DOWN;
         }
-        else if (-entity.getPitch() > 60.0f)
+        else if (-entity.getXRot() > 60.0f)
         {
             return Direction.UP;
         }
@@ -125,7 +125,7 @@ public class EntityUtils
 
         for (T entity : list)
         {
-            if (entity.getUuid().equals(uuid))
+            if (entity.getUUID().equals(uuid))
             {
                 return entity;
             }
@@ -138,21 +138,21 @@ public class EntityUtils
     public static String getEntityId(Entity entity)
     {
         EntityType<?> entitytype = entity.getType();
-        Identifier resourcelocation = EntityType.getId(entitytype);
-        return entitytype.isSaveable() && resourcelocation != null ? resourcelocation.toString() : null;
+        ResourceLocation resourcelocation = EntityType.getKey(entitytype);
+        return entitytype.canSerialize() && resourcelocation != null ? resourcelocation.toString() : null;
     }
 
     @Nullable
-    private static Entity createEntityFromNBTSingle(NbtCompound nbt, World world)
+    private static Entity createEntityFromNBTSingle(CompoundTag nbt, Level world)
     {
         try
         {
-            Optional<Entity> optional = EntityType.getEntityFromNbt(nbt, world);
+            Optional<Entity> optional = EntityType.create(nbt, world);
 
             if (optional.isPresent())
             {
                 Entity entity = optional.get();
-                entity.setUuid(UUID.randomUUID());
+                entity.setUUID(UUID.randomUUID());
                 return entity;
             }
         }
@@ -170,7 +170,7 @@ public class EntityUtils
      * @return
      */
     @Nullable
-    public static Entity createEntityAndPassengersFromNBT(NbtCompound nbt, World world)
+    public static Entity createEntityAndPassengersFromNBT(CompoundTag nbt, Level world)
     {
         Entity entity = createEntityFromNBTSingle(nbt, world);
 
@@ -182,7 +182,7 @@ public class EntityUtils
         {
             if (nbt.contains("Passengers", Constants.NBT.TAG_LIST))
             {
-                NbtList taglist = nbt.getList("Passengers", Constants.NBT.TAG_COMPOUND);
+                ListTag taglist = nbt.getList("Passengers", Constants.NBT.TAG_COMPOUND);
 
                 for (int i = 0; i < taglist.size(); ++i)
                 {
@@ -199,18 +199,18 @@ public class EntityUtils
         }
     }
 
-    public static void spawnEntityAndPassengersInWorld(Entity entity, World world)
+    public static void spawnEntityAndPassengersInWorld(Entity entity, Level world)
     {
-        if (world.spawnEntity(entity) && entity.hasPassengers())
+        if (world.addFreshEntity(entity) && entity.isVehicle())
         {
-            for (Entity passenger : entity.getPassengerList())
+            for (Entity passenger : entity.getPassengers())
             {
-                passenger.refreshPositionAndAngles(
+                passenger.moveTo(
                         entity.getX(),
-                        entity.getY() + entity.getMountedHeightOffset() + passenger.getHeightOffset(),
+                        entity.getY() + entity.getPassengersRidingOffset() + passenger.getMyRidingOffset(),
                         entity.getZ(),
-                        passenger.getYaw(), passenger.getPitch());
-                setEntityRotations(passenger, passenger.getYaw(), passenger.getPitch());
+                        passenger.getYRot(), passenger.getXRot());
+                setEntityRotations(passenger, passenger.getYRot(), passenger.getXRot());
                 spawnEntityAndPassengersInWorld(passenger, world);
             }
         }
@@ -218,36 +218,36 @@ public class EntityUtils
 
     public static void setEntityRotations(Entity entity, float yaw, float pitch)
     {
-        entity.setYaw(yaw);
-        entity.prevYaw = yaw;
+        entity.setYRot(yaw);
+        entity.yRotO = yaw;
 
-        entity.setPitch(pitch);
-        entity.prevPitch = pitch;
+        entity.setXRot(pitch);
+        entity.xRotO = pitch;
 
         if (entity instanceof LivingEntity livingBase)
         {
-            livingBase.headYaw = yaw;
-            livingBase.bodyYaw = yaw;
-            livingBase.prevHeadYaw = yaw;
-            livingBase.prevBodyYaw = yaw;
+            livingBase.yHeadRot = yaw;
+            livingBase.yBodyRot = yaw;
+            livingBase.yHeadRotO = yaw;
+            livingBase.yBodyRotO = yaw;
             //livingBase.renderYawOffset = yaw;
             //livingBase.prevRenderYawOffset = yaw;
         }
     }
 
-    public static List<Entity> getEntitiesWithinSubRegion(World world, BlockPos origin, BlockPos regionPos, BlockPos regionSize,
+    public static List<Entity> getEntitiesWithinSubRegion(Level world, BlockPos origin, BlockPos regionPos, BlockPos regionSize,
             SchematicPlacement schematicPlacement, SubRegionPlacement placement)
     {
         // These are the untransformed relative positions
         BlockPos regionPosRelTransformed = PositionUtils.getTransformedBlockPos(regionPos, schematicPlacement.getMirror(), schematicPlacement.getRotation());
-        BlockPos posEndAbs = PositionUtils.getTransformedPlacementPosition(regionSize.add(-1, -1, -1), schematicPlacement, placement).add(regionPosRelTransformed).add(origin);
-        BlockPos regionPosAbs = regionPosRelTransformed.add(origin);
-        Box bb = PositionUtils.createEnclosingAABB(regionPosAbs, posEndAbs);
+        BlockPos posEndAbs = PositionUtils.getTransformedPlacementPosition(regionSize.offset(-1, -1, -1), schematicPlacement, placement).offset(regionPosRelTransformed).offset(origin);
+        BlockPos regionPosAbs = regionPosRelTransformed.offset(origin);
+        AABB bb = PositionUtils.createEnclosingAABB(regionPosAbs, posEndAbs);
 
-        return world.getOtherEntities(null, bb, EntityUtils.NOT_PLAYER);
+        return world.getEntities(null, bb, EntityUtils.NOT_PLAYER);
     }
 
-    public static boolean shouldPickBlock(PlayerEntity player)
+    public static boolean shouldPickBlock(Player player)
     {
         return Configs.Generic.PICK_BLOCK_ENABLED.getBooleanValue() &&
                 (Configs.Generic.TOOL_ITEM_ENABLED.getBooleanValue() == false ||

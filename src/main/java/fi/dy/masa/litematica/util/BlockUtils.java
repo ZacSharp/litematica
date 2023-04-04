@@ -3,13 +3,13 @@ package fi.dy.masa.litematica.util;
 import java.util.Iterator;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.Property;
 import com.google.common.base.Splitter;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.Property;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 
 public class BlockUtils
 {
@@ -28,16 +28,16 @@ public class BlockUtils
 
         try
         {
-            Identifier id = new Identifier(blockName);
+            ResourceLocation id = new ResourceLocation(blockName);
 
-            if (Registry.BLOCK.containsId(id))
+            if (Registry.BLOCK.containsKey(id))
             {
                 Block block = Registry.BLOCK.get(id);
-                BlockState state = block.getDefaultState();
+                BlockState state = block.defaultBlockState();
 
                 if (index != -1 && str.length() > (index + 4) && str.charAt(str.length() - 1) == ']')
                 {
-                    StateManager<Block, BlockState> stateManager = block.getStateManager();
+                    StateDefinition<Block, BlockState> stateManager = block.getStateDefinition();
                     String propStr = str.substring(index + 1, str.length() - 1);
 
                     for (String propAndVal : COMMA_SPLITTER.split(propStr))
@@ -79,12 +79,12 @@ public class BlockUtils
     @SuppressWarnings("unchecked")
     public static <T extends Comparable<T>> BlockState getBlockStateWithProperty(BlockState state, Property<T> prop, Comparable<?> value)
     {
-        return state.with(prop, (T) value);
+        return state.setValue(prop, (T) value);
     }
 
     @Nullable
     public static <T extends Comparable<T>> T getPropertyValueByName(Property<T> prop, String valStr)
     {
-        return prop.parse(valStr).orElse(null);
+        return prop.getValue(valStr).orElse(null);
     }
 }

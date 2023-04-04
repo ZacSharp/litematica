@@ -2,10 +2,10 @@ package fi.dy.masa.litematica.schematic.projects;
 
 import java.io.File;
 import javax.annotation.Nullable;
+import net.minecraft.client.Minecraft;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import net.minecraft.client.MinecraftClient;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.gui.GuiSchematicProjectManager;
 import fi.dy.masa.litematica.gui.GuiSchematicProjectsBrowser;
@@ -18,7 +18,7 @@ import fi.dy.masa.malilib.util.JsonUtils;
 public class SchematicProjectsManager
 {
     //private static final Pattern PATTERN_NAME_NUMBER = Pattern.compile("(.*)([0-9]+)$");
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     @Nullable
     private SchematicProject currentProject;
@@ -169,7 +169,7 @@ public class SchematicProjectsManager
         return false;
     }
 
-    public boolean deleteLastSeenArea(MinecraftClient mc)
+    public boolean deleteLastSeenArea(Minecraft mc)
     {
         SchematicProject project = this.getCurrentProject();
 

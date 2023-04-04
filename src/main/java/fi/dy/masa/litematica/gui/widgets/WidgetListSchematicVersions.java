@@ -2,7 +2,9 @@ package fi.dy.masa.litematica.gui.widgets;
 
 import java.util.Collection;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.gui.GuiSchematicProjectManager;
 import fi.dy.masa.litematica.gui.Icons;
 import fi.dy.masa.litematica.render.infohud.ToolHud;
@@ -14,8 +16,6 @@ import fi.dy.masa.malilib.gui.widgets.WidgetListBase;
 import fi.dy.masa.malilib.gui.widgets.WidgetSearchBar;
 import fi.dy.masa.malilib.render.RenderUtils;
 import fi.dy.masa.malilib.util.StringUtils;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
 
 public class WidgetListSchematicVersions extends WidgetListBase<SchematicVersion, WidgetSchematicVersion>
 {
@@ -34,7 +34,7 @@ public class WidgetListSchematicVersions extends WidgetListBase<SchematicVersion
     }
 
     @Override
-    public void drawContents(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void drawContents(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
         // Draw an outline around the entire entry list
         RenderUtils.drawOutlinedBox(this.posX, this.posY, this.browserWidth, this.browserHeight, 0xB0000000, COLOR_HORIZONTAL_BAR);
@@ -44,7 +44,7 @@ public class WidgetListSchematicVersions extends WidgetListBase<SchematicVersion
         this.drawAdditionalContents(mouseX, mouseY, matrixStack);
     }
 
-    protected void drawAdditionalContents(int mouseX, int mouseY, MatrixStack matrixStack)
+    protected void drawAdditionalContents(int mouseX, int mouseY, PoseStack matrixStack)
     {
         int x = this.posX + this.totalWidth - this.infoWidth + 4;
         int y = this.posY + 4;

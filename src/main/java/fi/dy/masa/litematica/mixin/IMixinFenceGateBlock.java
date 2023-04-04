@@ -1,9 +1,9 @@
 package fi.dy.masa.litematica.mixin;
 
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FenceGateBlock;
 
 @Mixin(FenceGateBlock.class)
 public interface IMixinFenceGateBlock

@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.data.SchematicHolder;
 import fi.dy.masa.litematica.gui.GuiSchematicSave;
@@ -73,7 +73,7 @@ public class WidgetSchematicEntry extends WidgetListEntryBase<LitematicaSchemati
     }
 
     @Override
-    public void render(int mouseX, int mouseY, boolean selected, MatrixStack matrixStack)
+    public void render(int mouseX, int mouseY, boolean selected, PoseStack matrixStack)
     {
         RenderUtils.color(1f, 1f, 1f, 1f);
 
@@ -126,7 +126,7 @@ public class WidgetSchematicEntry extends WidgetListEntryBase<LitematicaSchemati
     }
 
     @Override
-    public void postRenderHovered(int mouseX, int mouseY, boolean selected, MatrixStack matrixStack)
+    public void postRenderHovered(int mouseX, int mouseY, boolean selected, PoseStack matrixStack)
     {
         RenderUtils.color(1f, 1f, 1f, 1f);
 
@@ -176,7 +176,7 @@ public class WidgetSchematicEntry extends WidgetListEntryBase<LitematicaSchemati
         {
             if (this.type == Type.CREATE_PLACEMENT)
             {
-                BlockPos pos = new BlockPos(this.widget.mc.player.getPos());
+                BlockPos pos = new BlockPos(this.widget.mc.player.position());
                 LitematicaSchematic entry = this.widget.schematic;
                 String name = entry.getMetadata().getName();
                 boolean enabled = GuiBase.isShiftDown() == false;

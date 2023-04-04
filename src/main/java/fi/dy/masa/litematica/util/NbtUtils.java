@@ -4,18 +4,18 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import javax.annotation.Nullable;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec3;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.malilib.util.Constants;
 
 public class NbtUtils
 {
     @Nullable
-    public static BlockPos readBlockPosFromArrayTag(NbtCompound tag, String tagName)
+    public static BlockPos readBlockPosFromArrayTag(CompoundTag tag, String tagName)
     {
         if (tag.contains(tagName, Constants.NBT.TAG_INT_ARRAY))
         {
@@ -31,21 +31,21 @@ public class NbtUtils
     }
 
     @Nullable
-    public static Vec3d readVec3dFromListTag(@Nullable NbtCompound tag)
+    public static Vec3 readVec3dFromListTag(@Nullable CompoundTag tag)
     {
         return readVec3dFromListTag(tag, "Pos");
     }
 
     @Nullable
-    public static Vec3d readVec3dFromListTag(@Nullable NbtCompound tag, String tagName)
+    public static Vec3 readVec3dFromListTag(@Nullable CompoundTag tag, String tagName)
     {
         if (tag != null && tag.contains(tagName, Constants.NBT.TAG_LIST))
         {
-            NbtList tagList = tag.getList(tagName, Constants.NBT.TAG_DOUBLE);
+            ListTag tagList = tag.getList(tagName, Constants.NBT.TAG_DOUBLE);
 
-            if (tagList.getHeldType() == Constants.NBT.TAG_DOUBLE && tagList.size() == 3)
+            if (tagList.getElementType() == Constants.NBT.TAG_DOUBLE && tagList.size() == 3)
             {
-                return new Vec3d(tagList.getDouble(0), tagList.getDouble(1), tagList.getDouble(2));
+                return new Vec3(tagList.getDouble(0), tagList.getDouble(1), tagList.getDouble(2));
             }
         }
 
@@ -53,7 +53,7 @@ public class NbtUtils
     }
 
     @Nullable
-    public static NbtCompound readNbtFromFile(File file)
+    public static CompoundTag readNbtFromFile(File file)
     {
         if (file.exists() == false || file.canRead() == false)
         {
@@ -72,7 +72,7 @@ public class NbtUtils
             return null;
         }
 
-        NbtCompound nbt = null;
+        CompoundTag nbt = null;
 
         if (is != null)
         {

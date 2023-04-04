@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import javax.annotation.Nullable;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.util.ScreenshotRecorder;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
+import com.mojang.blaze3d.platform.NativeImage;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.gui.GuiMainMenu.ButtonListenerChangeMenu;
@@ -437,8 +437,8 @@ public class GuiSchematicManager extends GuiSchematicBrowserBase implements ISel
             {
                 try
                 {
-                    MinecraftClient mc = MinecraftClient.getInstance();
-                    NativeImage screenshot = ScreenshotRecorder.takeScreenshot(mc.getFramebuffer());
+                    Minecraft mc = Minecraft.getInstance();
+                    NativeImage screenshot = Screenshot.takeScreenshot(mc.getMainRenderTarget());
 
                     int x = screenshot.getWidth() >= screenshot.getHeight() ? (screenshot.getWidth() - screenshot.getHeight()) / 2 : 0;
                     int y = screenshot.getHeight() >= screenshot.getWidth() ? (screenshot.getHeight() - screenshot.getWidth()) / 2 : 0;

@@ -4,14 +4,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import org.apache.commons.io.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.scheduler.TaskScheduler;
 import fi.dy.masa.litematica.scheduler.tasks.TaskSaveSchematic;
@@ -34,7 +34,7 @@ public class SchematicProject
     private final List<SchematicVersion> versions = new ArrayList<>();
     private final File directory;
     private File projectFile;
-    private BlockPos origin = BlockPos.ORIGIN;
+    private BlockPos origin = BlockPos.ZERO;
     private String projectName = "unnamed";
     private AreaSelection selection = new AreaSelection();
     private AreaSelection lastSeenArea = new AreaSelection();
@@ -114,10 +114,10 @@ public class SchematicProject
     public void setOrigin(BlockPos origin)
     {
         BlockPos offset = this.selection.getEffectiveOrigin().subtract(this.origin);
-        this.selection.moveEntireSelectionTo(origin.add(offset), false);
+        this.selection.moveEntireSelectionTo(origin.offset(offset), false);
 
         offset = this.selectionSimple.getEffectiveOrigin().subtract(this.origin);
-        this.selectionSimple.moveEntireSelectionTo(origin.add(offset), false);
+        this.selectionSimple.moveEntireSelectionTo(origin.offset(offset), false);
 
         // Forget the old last seen area, it will be invalid after moving the entire project
         this.lastSeenArea = new AreaSelection();
@@ -127,7 +127,7 @@ public class SchematicProject
 
         if (currentVersion != null)
         {
-            BlockPos areaPosition = this.origin.add(currentVersion.getAreaOffset());
+            BlockPos areaPosition = this.origin.offset(currentVersion.getAreaOffset());
 
             if (this.currentPlacement != null)
             {
@@ -205,7 +205,7 @@ public class SchematicProject
 
                 if (schematic != null)
                 {
-                    BlockPos areaPosition = this.origin.add(version.getAreaOffset());
+                    BlockPos areaPosition = this.origin.offset(version.getAreaOffset());
                     this.currentPlacement = SchematicPlacement.createFor(schematic, areaPosition, version.getName(), true, true);
                     this.currentPlacement.setShouldBeSaved(false);
                     DataManager.getSchematicPlacementManager().addSchematicPlacement(this.currentPlacement, false);
@@ -233,7 +233,7 @@ public class SchematicProject
     {
         if (this.currentPlacement != null)
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
             if (mc.player == null || EntityUtils.isCreativeMode(mc.player) == false)
             {
@@ -250,7 +250,7 @@ public class SchematicProject
         }
     }
 
-    public void deleteLastSeenArea(MinecraftClient mc)
+    public void deleteLastSeenArea(Minecraft mc)
     {
         ToolUtils.deleteSelectionVolumes(this.lastSeenArea, true, mc);
     }
@@ -316,7 +316,7 @@ public class SchematicProject
     {
         if (this.checkCanSaveOrPrintError())
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             String author = mc.player.getName().getString();
             String fileName = this.getNextFileName();
 
@@ -364,7 +364,7 @@ public class SchematicProject
 
     public void clear()
     {
-        this.origin = BlockPos.ORIGIN;
+        this.origin = BlockPos.ZERO;
         this.versions.clear();
         this.selection = new AreaSelection();
         this.selectionSimple = new AreaSelectionSimple(true);
@@ -506,7 +506,7 @@ public class SchematicProject
             return false;
         }
 
-        if (MinecraftClient.getInstance().player == null)
+        if (Minecraft.getInstance().player == null)
         {
             InfoUtils.showGuiOrInGameMessage(MessageType.ERROR, "litematica.error.schematic_projects.null_player");
             return false;
@@ -533,9 +533,9 @@ public class SchematicProject
         @Override
         public void onTaskCompleted()
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
-            if (mc.isOnThread())
+            if (mc.isSameThread())
             {
                 this.saveVersion();
             }

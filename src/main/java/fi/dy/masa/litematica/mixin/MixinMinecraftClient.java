@@ -4,14 +4,14 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.thread.ReentrantThreadExecutor;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.util.WorldUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.thread.ReentrantBlockableEventLoop;
 
-@Mixin(MinecraftClient.class)
-public abstract class MixinMinecraftClient extends ReentrantThreadExecutor<Runnable>
+@Mixin(Minecraft.class)
+public abstract class MixinMinecraftClient extends ReentrantBlockableEventLoop<Runnable>
 {
     public MixinMinecraftClient(String string_1)
     {
@@ -24,7 +24,7 @@ public abstract class MixinMinecraftClient extends ReentrantThreadExecutor<Runna
     {
         if (Configs.Generic.PLACEMENT_RESTRICTION.getBooleanValue())
         {
-            if (WorldUtils.handlePlacementRestriction((MinecraftClient)(Object) this))
+            if (WorldUtils.handlePlacementRestriction((Minecraft)(Object) this))
             {
                 ci.cancel();
             }

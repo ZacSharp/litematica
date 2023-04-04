@@ -1,15 +1,15 @@
 package fi.dy.masa.litematica.mixin;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.VineBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
-import net.minecraft.block.VineBlock;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockView;
 
 @Mixin(VineBlock.class)
 public interface IMixinVineBlock
 {
     @Invoker("shouldHaveSide")
-    boolean invokeShouldConnectUp(BlockView blockReader, BlockPos pos, Direction side);
+    boolean invokeShouldConnectUp(BlockGetter blockReader, BlockPos pos, Direction side);
 }

@@ -2,12 +2,12 @@ package fi.dy.masa.litematica.gui.widgets;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.schematic.projects.SchematicProject;
 import fi.dy.masa.litematica.schematic.projects.SchematicVersion;
 import fi.dy.masa.malilib.gui.widgets.WidgetListEntryBase;
 import fi.dy.masa.malilib.render.RenderUtils;
 import fi.dy.masa.malilib.util.StringUtils;
-import net.minecraft.client.util.math.MatrixStack;
 
 public class WidgetSchematicVersion extends WidgetListEntryBase<SchematicVersion>
 {
@@ -24,7 +24,7 @@ public class WidgetSchematicVersion extends WidgetListEntryBase<SchematicVersion
     }
 
     @Override
-    public void render(int mouseX, int mouseY, boolean selected, MatrixStack matrixStack)
+    public void render(int mouseX, int mouseY, boolean selected, PoseStack matrixStack)
     {
         RenderUtils.color(1f, 1f, 1f, 1f);
 
@@ -55,7 +55,7 @@ public class WidgetSchematicVersion extends WidgetListEntryBase<SchematicVersion
     }
 
     @Override
-    public void postRenderHovered(int mouseX, int mouseY, boolean selected, MatrixStack matrixStack)
+    public void postRenderHovered(int mouseX, int mouseY, boolean selected, PoseStack matrixStack)
     {
         List<String> text = new ArrayList<>();
         /*

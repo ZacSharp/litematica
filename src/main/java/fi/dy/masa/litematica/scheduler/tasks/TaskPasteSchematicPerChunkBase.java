@@ -6,11 +6,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.render.infohud.IInfoHudRenderer;
@@ -163,9 +163,9 @@ public abstract class TaskPasteSchematicPerChunkBase extends TaskBase implements
     {
     }
 
-    protected boolean canProcessChunk(ChunkPos pos, WorldSchematic worldSchematic, ClientWorld worldClient)
+    protected boolean canProcessChunk(ChunkPos pos, WorldSchematic worldSchematic, ClientLevel worldClient)
     {
-        if (worldSchematic.getChunkProvider().isChunkLoaded(pos.x, pos.z) == false ||
+        if (worldSchematic.getChunkProvider().hasChunk(pos.x, pos.z) == false ||
             DataManager.getSchematicPlacementManager().hasPendingRebuildFor(pos))
         {
             return false;
@@ -181,7 +181,7 @@ public abstract class TaskPasteSchematicPerChunkBase extends TaskBase implements
         {
             if (this.mc.player != null)
             {
-                this.comparator.setReferencePosition(this.mc.player.getBlockPos());
+                this.comparator.setReferencePosition(this.mc.player.blockPosition());
                 this.pendingChunks.sort(this.comparator);
             }
 

@@ -1,37 +1,37 @@
 package fi.dy.masa.litematica.render.schematic;
 
 import javax.annotation.Nullable;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockRenderView;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.LightType;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkProvider;
-import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.chunk.light.LightingProvider;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ColorResolver;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LightChunkGetter;
+import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.material.FluidState;
 import fi.dy.masa.litematica.world.FakeLightingProvider;
 
-public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
+public class ChunkCacheSchematic implements BlockAndTintGetter, LightChunkGetter
 {
-    private static final BlockState AIR = Blocks.AIR.getDefaultState();
+    private static final BlockState AIR = Blocks.AIR.defaultBlockState();
 
-    protected final World world;
-    protected final ClientWorld worldClient;
+    protected final Level world;
+    protected final ClientLevel worldClient;
     protected final FakeLightingProvider lightingProvider;
     protected int chunkStartX;
     protected int chunkStartZ;
-    protected WorldChunk[][] chunkArray;
+    protected LevelChunk[][] chunkArray;
     protected boolean empty;
 
-    public ChunkCacheSchematic(World worldIn, ClientWorld clientWorld, BlockPos pos, int expand)
+    public ChunkCacheSchematic(Level worldIn, ClientLevel clientWorld, BlockPos pos, int expand)
     {
         this.world = worldIn;
         this.lightingProvider = new FakeLightingProvider(this);
@@ -41,7 +41,7 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
         this.chunkStartZ = (pos.getZ() - expand) >> 4;
         int chunkEndX = (pos.getX() + expand + 15) >> 4;
         int chunkEndZ = (pos.getZ() + expand + 15) >> 4;
-        this.chunkArray = new WorldChunk[chunkEndX - this.chunkStartX + 1][chunkEndZ - this.chunkStartZ + 1];
+        this.chunkArray = new LevelChunk[chunkEndX - this.chunkStartX + 1][chunkEndZ - this.chunkStartZ + 1];
         this.empty = true;
 
         for (int cx = this.chunkStartX; cx <= chunkEndX; ++cx)
@@ -56,9 +56,9 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
         {
             for (int cz = pos.getZ() >> 4; cz <= (pos.getZ() + 15) >> 4; ++cz)
             {
-                WorldChunk chunk = this.chunkArray[cx - this.chunkStartX][cz - this.chunkStartZ];
+                LevelChunk chunk = this.chunkArray[cx - this.chunkStartX][cz - this.chunkStartZ];
 
-                if (chunk != null && chunk.areSectionsEmptyBetween(pos.getY(), pos.getY() + 15) == false)
+                if (chunk != null && chunk.isYSpaceEmpty(pos.getY(), pos.getY() + 15) == false)
                 {
                     this.empty = false;
                     break;
@@ -68,14 +68,14 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
     }
 
     @Override
-    public BlockView getWorld()
+    public BlockGetter getLevel()
     {
         return this.world;
     }
 
     @Override
     @org.jetbrains.annotations.Nullable
-    public BlockView getChunk(int chunkX, int chunkZ)
+    public BlockGetter getChunkForLighting(int chunkX, int chunkZ)
     {
         return null; // TODO 1.17 this shouldn't be needed since the lighting provider does nothing
     }
@@ -94,7 +94,7 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
         if (cx >= 0 && cx < this.chunkArray.length &&
             cz >= 0 && cz < this.chunkArray[cx].length)
         {
-            Chunk chunk = this.chunkArray[cx][cz];
+            ChunkAccess chunk = this.chunkArray[cx][cz];
 
             if (chunk != null)
             {
@@ -109,11 +109,11 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
     @Nullable
     public BlockEntity getBlockEntity(BlockPos pos)
     {
-        return this.getBlockEntity(pos, WorldChunk.CreationType.CHECK);
+        return this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
     }
 
     @Nullable
-    public BlockEntity getBlockEntity(BlockPos pos, WorldChunk.CreationType type)
+    public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType type)
     {
         int i = (pos.getX() >> 4) - this.chunkStartX;
         int j = (pos.getZ() >> 4) - this.chunkStartZ;
@@ -122,7 +122,7 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
     }
 
     @Override
-    public int getLightLevel(LightType var1, BlockPos var2)
+    public int getBrightness(LightLayer var1, BlockPos var2)
     {
         return 15;
     }
@@ -135,21 +135,21 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
     }
 
     @Override
-    public LightingProvider getLightingProvider()
+    public LevelLightEngine getLightEngine()
     {
         return this.lightingProvider;
     }
 
     @Override
-    public int getColor(BlockPos pos, ColorResolver colorResolver)
+    public int getBlockTint(BlockPos pos, ColorResolver colorResolver)
     {
         return colorResolver.getColor(this.worldClient.getBiome(pos), pos.getX(), pos.getZ());
     }
 
     @Override
-    public float getBrightness(Direction direction, boolean bl)
+    public float getShade(Direction direction, boolean bl)
     {
-        return this.worldClient.getBrightness(direction, bl); // AO brightness on face
+        return this.worldClient.getShade(direction, bl); // AO brightness on face
     }
 
     @Override
@@ -159,8 +159,8 @@ public class ChunkCacheSchematic implements BlockRenderView, ChunkProvider
     }
 
     @Override
-    public int getBottomY()
+    public int getMinBuildHeight()
     {
-        return this.world.getBottomY();
+        return this.world.getMinBuildHeight();
     }
 }

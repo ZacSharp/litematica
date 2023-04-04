@@ -1,13 +1,13 @@
 package fi.dy.masa.litematica.render;
 
 import java.util.List;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.util.ItemUtils;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.render.RenderUtils;
@@ -33,10 +33,10 @@ public class BlockInfo
         this.state = state;
         this.stack = ItemUtils.getItemForState(this.state);
 
-        Identifier rl = Registry.BLOCK.getId(this.state.getBlock());
+        ResourceLocation rl = Registry.BLOCK.getKey(this.state.getBlock());
         this.blockRegistryname = rl != null ? rl.toString() : "<null>";
 
-        this.stackName = this.stack.getName().getString();
+        this.stackName = this.stack.getHoverName().getString();
 
         int w = StringUtils.getStringWidth(this.stackName) + 20;
         w = Math.max(w, StringUtils.getStringWidth(this.blockRegistryname));
@@ -58,13 +58,13 @@ public class BlockInfo
         return this.totalHeight;
     }
 
-    public void render(int x, int y, MinecraftClient mc, MatrixStack matrixStack)
+    public void render(int x, int y, Minecraft mc, PoseStack matrixStack)
     {
         if (this.state != null)
         {
             RenderUtils.drawOutlinedBox(x, y, this.totalWidth, this.totalHeight, 0xFF000000, GuiBase.COLOR_HORIZONTAL_BAR);
 
-            TextRenderer textRenderer = mc.textRenderer;
+            Font textRenderer = mc.font;
             int x1 = x + 10;
             y += 4;
 
@@ -76,8 +76,8 @@ public class BlockInfo
 
             //mc.getRenderItem().zLevel += 100;
             RenderUtils.drawRect(x1, y, 16, 16, 0x20FFFFFF); // light background for the item
-            mc.getItemRenderer().renderInGui(this.stack, x1, y);
-            mc.getItemRenderer().renderGuiItemOverlay(textRenderer, this.stack, x1, y, null);
+            mc.getItemRenderer().renderAndDecorateFakeItem(this.stack, x1, y);
+            mc.getItemRenderer().renderGuiItemDecorations(textRenderer, this.stack, x1, y, null);
             //mc.getRenderItem().zLevel -= 100;
 
             //RenderSystem.disableBlend();
@@ -87,7 +87,7 @@ public class BlockInfo
 
             y += 20;
             textRenderer.draw(matrixStack, this.blockRegistryname, x1, y, 0xFF4060FF);
-            y += textRenderer.fontHeight + 4;
+            y += textRenderer.lineHeight + 4;
 
             RenderUtils.renderText(x1, y, 0xFFB0B0B0, this.props, matrixStack);
         }

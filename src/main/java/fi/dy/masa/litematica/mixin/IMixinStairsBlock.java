@@ -1,16 +1,16 @@
 package fi.dy.masa.litematica.mixin;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.StairsShape;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.StairsBlock;
-import net.minecraft.block.enums.StairShape;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
 
-@Mixin(StairsBlock.class)
+@Mixin(StairBlock.class)
 public interface IMixinStairsBlock
 {
     @Invoker("getStairShape")
-    public static StairShape invokeGetStairShape(BlockState state, BlockView worldIn, BlockPos pos) { return null; }
+    public static StairsShape invokeGetStairShape(BlockState state, BlockGetter worldIn, BlockPos pos) { return null; }
 }

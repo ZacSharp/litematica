@@ -5,10 +5,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import com.google.common.collect.ImmutableMap;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
 import fi.dy.masa.litematica.data.SchematicHolder;
 import fi.dy.masa.litematica.render.infohud.InfoHud;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
@@ -61,7 +61,7 @@ public class TaskSaveSchematic extends TaskProcessChunkBase
         if (this.fromSchematicWorld)
         {
             WorldSchematic world = SchematicWorldHandler.getSchematicWorld();
-            return world != null && world.getChunkManager().isChunkLoaded(pos.x, pos.z);
+            return world != null && world.getChunkSource().hasChunk(pos.x, pos.z);
         }
         
         return this.areSurroundingChunksLoaded(pos, this.clientWorld, 1);
@@ -70,7 +70,7 @@ public class TaskSaveSchematic extends TaskProcessChunkBase
     @Override
     protected boolean processChunk(ChunkPos pos)
     {
-        World world = this.fromSchematicWorld ? SchematicWorldHandler.getSchematicWorld() : this.world;
+        Level world = this.fromSchematicWorld ? SchematicWorldHandler.getSchematicWorld() : this.world;
         ImmutableMap<String, IntBoundingBox> volumes = PositionUtils.getBoxesWithinChunk(pos.x, pos.z, this.subRegions);
         this.schematic.takeBlocksFromWorldWithinChunk(world, volumes, this.subRegions, this.info);
 

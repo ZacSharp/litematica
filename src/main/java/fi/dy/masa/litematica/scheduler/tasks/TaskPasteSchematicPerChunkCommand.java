@@ -9,30 +9,30 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.command.argument.BlockArgumentParser;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.SkullItem;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.Util;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.commands.arguments.blocks.BlockStateParser;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.PlayerHeadItem;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.render.infohud.InfoHud;
@@ -51,7 +51,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 {
     protected final PasteNbtBehavior nbtBehavior;
     protected final String setBlockCommand;
-    protected final Consumer<Text> gameRuleListener;
+    protected final Consumer<Component> gameRuleListener;
     protected final boolean ignoreBlocks;
     protected final boolean ignoreEntities;
 
@@ -107,8 +107,8 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
             if (Configs.Generic.PASTE_DISABLE_FEEDBACK.getBooleanValue())
             {
                 DataManager.addChatListener(this.gameRuleListener);
-                this.mc.player.sendChatMessage("/gamerule sendCommandFeedback");
-                this.gameRuleProbeTimeout = Util.getMeasuringTimeNano() + this.maxGameRuleProbeTime;
+                this.mc.player.chat("/gamerule sendCommandFeedback");
+                this.gameRuleProbeTimeout = Util.getNanos() + this.maxGameRuleProbeTime;
                 this.phase = TaskPhase.GAMERULE_PROBE;
             }
             else
@@ -120,7 +120,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
         if (this.phase == TaskPhase.GAMERULE_PROBE)
         {
-            if (Util.getMeasuringTimeNano() > this.gameRuleProbeTimeout)
+            if (Util.getNanos() > this.gameRuleProbeTimeout)
             {
                 InfoUtils.showGuiOrInGameMessage(MessageType.ERROR, 8000, "litematica.message.error.schematic_paste_failed.game_rule_probe_timeout");
                 this.finished = false;
@@ -134,7 +134,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         this.processedChunksThisTick = 0;
 
         if (this.currentChunk != null &&
-            this.canProcessChunk(this.currentChunk, this.schematicWorld, this.mc.world) == false)
+            this.canProcessChunk(this.currentChunk, this.schematicWorld, this.mc.level) == false)
         {
             return false;
         }
@@ -178,9 +178,9 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         return false;
     }
 
-    public void checkGameRuleState(Text message)
+    public void checkGameRuleState(Component message)
     {
-        if (message instanceof TranslatableText translatableText)
+        if (message instanceof TranslatableComponent translatableText)
         {
             if ("commands.gamerule.query".equals(translatableText.getKey()))
             {
@@ -189,7 +189,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
                 if (this.shouldEnableFeedback)
                 {
-                    this.mc.player.sendChatMessage("/gamerule sendCommandFeedback false");
+                    this.mc.player.chat("/gamerule sendCommandFeedback false");
                 }
             }
         }
@@ -203,7 +203,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
             ChunkPos pos = this.pendingChunks.get(0);
 
-            if (this.canProcessChunk(pos, this.schematicWorld, this.mc.world))
+            if (this.canProcessChunk(pos, this.schematicWorld, this.mc.level))
             {
                 this.currentChunk = pos;
                 this.startNextBox(pos);
@@ -227,7 +227,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
             if (this.ignoreBlocks == false)
             {
                 IntBoundingBox box = this.currentBox;
-                this.positionIterator = BlockPos.iterate(box.minX, box.minY, box.minZ,
+                this.positionIterator = BlockPos.betweenClosed(box.minX, box.minY, box.minZ,
                                                          box.maxX, box.maxY, box.maxZ).iterator();
             }
         }
@@ -264,15 +264,15 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
     protected void startSettingBlocks(IntBoundingBox box)
     {
-        this.positionIterator = BlockPos.iterate(box.minX, box.minY, box.minZ,
+        this.positionIterator = BlockPos.betweenClosed(box.minX, box.minY, box.minZ,
                                                  box.maxX, box.maxY, box.maxZ).iterator();
         this.phase = TaskPhase.PROCESS_BOX_BLOCKS;
     }
 
     protected void startSummoningEntities(IntBoundingBox box)
     {
-        net.minecraft.util.math.Box bb = new net.minecraft.util.math.Box(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
-        this.entityIterator = this.schematicWorld.getOtherEntities(null, bb, (e) -> true).iterator();
+        net.minecraft.world.phys.AABB bb = new net.minecraft.world.phys.AABB(box.minX, box.minY, box.minZ, box.maxX + 1, box.maxY + 1, box.maxZ + 1);
+        this.entityIterator = this.schematicWorld.getEntities(null, bb, (e) -> true).iterator();
         this.phase = TaskPhase.PROCESS_BOX_ENTITIES;
     }
 
@@ -299,8 +299,8 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
     protected void processBlocksInBox(ChunkPos chunkPos, IntBoundingBox box)
     {
-        ChunkSchematic schematicChunk = this.schematicWorld.getChunkProvider().getChunk(chunkPos.x, chunkPos.z);
-        Chunk clientChunk = this.mc.world.getChunk(chunkPos.x, chunkPos.z);
+        ChunkSchematic schematicChunk = this.schematicWorld.getChunkProvider().getChunkForLighting(chunkPos.x, chunkPos.z);
+        ChunkAccess clientChunk = this.mc.level.getChunk(chunkPos.x, chunkPos.z);
 
         while (this.sentCommandsThisTick < this.maxCommandsPerTick &&
                this.positionIterator.hasNext())
@@ -336,7 +336,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         }
     }
 
-    protected void pasteBlock(BlockPos pos, WorldChunk schematicChunk, Chunk clientChunk)
+    protected void pasteBlock(BlockPos pos, LevelChunk schematicChunk, ChunkAccess clientChunk)
     {
         BlockState stateSchematic = schematicChunk.getBlockState(pos);
         BlockState stateClient = clientChunk.getBlockState(pos);
@@ -351,14 +351,14 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
                     return;
                 }
 
-                ClientPlayerEntity player = this.mc.player;
+                LocalPlayer player = this.mc.player;
                 PasteNbtBehavior nbtBehavior = this.nbtBehavior;
                 BlockEntity be = schematicChunk.getBlockEntity(pos);
 
                 if (be != null && nbtBehavior != PasteNbtBehavior.NONE)
                 {
-                    World schematicWorld = schematicChunk.getWorld();
-                    ClientWorld clientWorld = this.mc.world;
+                    Level schematicWorld = schematicChunk.getLevel();
+                    ClientLevel clientWorld = this.mc.level;
 
                     if (nbtBehavior == PasteNbtBehavior.PLACE_MODIFY)
                     {
@@ -390,7 +390,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
             // TODO add a config for the summon command
             String command = String.format(Locale.ROOT, "summon %s %f %f %f", id, entity.getX(), entity.getY(), entity.getZ());
 
-            if (entity instanceof ItemFrameEntity itemFrame)
+            if (entity instanceof ItemFrame itemFrame)
             {
                 command = this.getSummonCommandForItemFrame(itemFrame, command);
             }
@@ -399,16 +399,16 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         }
     }
 
-    protected String getSummonCommandForItemFrame(ItemFrameEntity itemFrame, String originalCommand)
+    protected String getSummonCommandForItemFrame(ItemFrame itemFrame, String originalCommand)
     {
-        ItemStack stack = itemFrame.getHeldItemStack();
+        ItemStack stack = itemFrame.getItem();
 
         if (stack.isEmpty() == false)
         {
-            Identifier itemId = Registry.ITEM.getId(stack.getItem());
-            int facingId = itemFrame.getHorizontalFacing().getId();
+            ResourceLocation itemId = Registry.ITEM.getKey(stack.getItem());
+            int facingId = itemFrame.getDirection().get3DDataValue();
             String nbtStr = String.format(" {Facing:%db,Item:{id:\"%s\",Count:1b}}", facingId, itemId);
-            NbtCompound tag = stack.getNbt();
+            CompoundTag tag = stack.getTag();
 
             if (tag != null)
             {
@@ -428,10 +428,10 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         return originalCommand;
     }
 
-    protected void sendSetBlockCommand(int x, int y, int z, BlockState state, ClientPlayerEntity player)
+    protected void sendSetBlockCommand(int x, int y, int z, BlockState state, LocalPlayer player)
     {
         String cmdName = this.setBlockCommand;
-        String blockString = BlockArgumentParser.stringifyBlockState(state);
+        String blockString = BlockStateParser.serialize(state);
         String strCommand = String.format("%s %d %d %d %s", cmdName, x, y, z, blockString);
 
         this.sendCommand(strCommand, player);
@@ -439,21 +439,21 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     }
 
     protected void setDataViaDataModify(BlockPos pos, BlockState state, BlockEntity be,
-                                        World schematicWorld, ClientWorld clientWorld, ClientPlayerEntity player)
+                                        Level schematicWorld, ClientLevel clientWorld, LocalPlayer player)
     {
-        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.getBlockPos(), 3);
+        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.blockPosition(), 3);
 
         if (placementPos != null && this.preparePickedStack(pos, state, be, schematicWorld, player))
         {
-            Vec3d posVec = new Vec3d(placementPos.getX() + 0.5, placementPos.getY() + 1.0, placementPos.getZ() + 0.5);
+            Vec3 posVec = new Vec3(placementPos.getX() + 0.5, placementPos.getY() + 1.0, placementPos.getZ() + 0.5);
             BlockHitResult hitResult = new BlockHitResult(posVec, Direction.UP, placementPos, false);
 
-            this.mc.interactionManager.interactBlock(player, clientWorld, Hand.OFF_HAND, hitResult);
+            this.mc.gameMode.useItemOn(player, clientWorld, InteractionHand.OFF_HAND, hitResult);
             this.sendSetBlockCommand(pos.getX(), pos.getY(), pos.getZ(), state, player);
 
             try
             {
-                Set<String> keys = new HashSet<>(be.writeNbt(new NbtCompound()).getKeys());
+                Set<String> keys = new HashSet<>(be.save(new CompoundTag()).getAllKeys());
                 keys.remove("id");
                 keys.remove("x");
                 keys.remove("y");
@@ -476,15 +476,15 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
     }
 
     protected void placeBlockViaClone(BlockPos pos, BlockState state, BlockEntity be,
-                                      World schematicWorld, ClientWorld clientWorld, ClientPlayerEntity player)
+                                      Level schematicWorld, ClientLevel clientWorld, LocalPlayer player)
     {
-        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.getBlockPos(), 3);
+        BlockPos placementPos = findEmptyNearbyPosition(clientWorld, player.blockPosition(), 3);
 
         if (placementPos != null && this.preparePickedStack(pos, state, be, schematicWorld, player))
         {
-            Vec3d posVec = new Vec3d(placementPos.getX() + 0.5, placementPos.getY() + 1.0, placementPos.getZ() + 0.5);
+            Vec3 posVec = new Vec3(placementPos.getX() + 0.5, placementPos.getY() + 1.0, placementPos.getZ() + 0.5);
             BlockHitResult hitResult = new BlockHitResult(posVec, Direction.UP, placementPos, false);
-            this.mc.interactionManager.interactBlock(player, clientWorld, Hand.OFF_HAND, hitResult);
+            this.mc.gameMode.useItemOn(player, clientWorld, InteractionHand.OFF_HAND, hitResult);
 
             /*
             {
@@ -508,45 +508,45 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
     // FIXME this method does not work, probably because of the player being too far and the teleport command getting executed later(?)
     protected void placeBlockDirectly(BlockPos pos, BlockState state, BlockEntity be,
-                                      World schematicWorld, ClientWorld clientWorld, ClientPlayerEntity player)
+                                      Level schematicWorld, ClientLevel clientWorld, LocalPlayer player)
     {
         if (this.preparePickedStack(pos, state, be, schematicWorld, player))
         {
-            player.setPos(pos.getX(), pos.getY() + 2, pos.getZ());
+            player.setPosRaw(pos.getX(), pos.getY() + 2, pos.getZ());
 
             String command = String.format("tp @p %d %d %d", pos.getX(), pos.getY() + 2, pos.getZ());
             this.sendCommand(command, player);
 
-            Vec3d posVec = new Vec3d(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+            Vec3 posVec = new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
             BlockHitResult hitResult = new BlockHitResult(posVec, Direction.UP, pos, false);
-            this.mc.interactionManager.interactBlock(player, clientWorld, Hand.OFF_HAND, hitResult);
+            this.mc.gameMode.useItemOn(player, clientWorld, InteractionHand.OFF_HAND, hitResult);
         }
     }
 
-    protected void sendCommand(String command, ClientPlayerEntity player)
+    protected void sendCommand(String command, LocalPlayer player)
     {
         this.sendCommandToServer(command, player);
         ++this.sentCommandsThisTick;
         ++this.sentCommandsTotal;
     }
 
-    protected void sendCommandToServer(String command, ClientPlayerEntity player)
+    protected void sendCommandToServer(String command, LocalPlayer player)
     {
         if (command.length() > 0 && command.charAt(0) != '/')
         {
-            player.sendChatMessage("/" + command);
+            player.chat("/" + command);
         }
         else
         {
-            player.sendChatMessage(command);
+            player.chat(command);
         }
     }
 
     @Nullable
-    public static BlockPos findEmptyNearbyPosition(World world, BlockPos centerPos, int radius)
+    public static BlockPos findEmptyNearbyPosition(Level world, BlockPos centerPos, int radius)
     {
-        BlockPos.Mutable pos = new BlockPos.Mutable();
-        BlockPos.Mutable sidePos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos sidePos = new BlockPos.MutableBlockPos();
 
         for (int y = centerPos.getY(); y <= centerPos.getY() + radius; ++y)
         {
@@ -567,16 +567,16 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         return null;
     }
 
-    public static boolean isPositionAndSidesEmpty(World world, BlockPos.Mutable centerPos, BlockPos.Mutable pos)
+    public static boolean isPositionAndSidesEmpty(Level world, BlockPos.MutableBlockPos centerPos, BlockPos.MutableBlockPos pos)
     {
-        if (world.isAir(centerPos) == false)
+        if (world.isEmptyBlock(centerPos) == false)
         {
             return false;
         }
 
         for (Direction side : PositionUtils.ALL_DIRECTIONS)
         {
-            if (world.isAir(pos.set(centerPos, side)) == false)
+            if (world.isEmptyBlock(pos.setWithOffset(centerPos, side)) == false)
             {
                 return false;
             }
@@ -585,15 +585,15 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
         return true;
     }
 
-    protected boolean preparePickedStack(BlockPos pos, BlockState state, BlockEntity be, World world, ClientPlayerEntity player)
+    protected boolean preparePickedStack(BlockPos pos, BlockState state, BlockEntity be, Level world, LocalPlayer player)
     {
-        ItemStack stack = state.getBlock().getPickStack(world, pos, state);
+        ItemStack stack = state.getBlock().getCloneItemStack(world, pos, state);
 
         if (stack.isEmpty() == false)
         {
             addBlockEntityNbt(stack, be);
-            player.getInventory().offHand.set(0, stack);
-            this.mc.interactionManager.clickCreativeStack(stack, 45);
+            player.getInventory().offhand.set(0, stack);
+            this.mc.gameMode.handleCreativeModeItemAdd(stack, 45);
             return true;
         }
 
@@ -602,16 +602,16 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
     public static void addBlockEntityNbt(ItemStack stack, BlockEntity be)
     {
-        NbtCompound tag = be.writeNbt(new NbtCompound());
+        CompoundTag tag = be.save(new CompoundTag());
 
-        if (stack.getItem() instanceof SkullItem && tag.contains("SkullOwner"))
+        if (stack.getItem() instanceof PlayerHeadItem && tag.contains("SkullOwner"))
         {
-            NbtCompound ownerTag = tag.getCompound("SkullOwner");
-            stack.getOrCreateNbt().put("SkullOwner", ownerTag);
+            CompoundTag ownerTag = tag.getCompound("SkullOwner");
+            stack.getOrCreateTag().put("SkullOwner", ownerTag);
         }
         else
         {
-            stack.setSubNbt("BlockEntityTag", tag);
+            stack.addTagElement("BlockEntityTag", tag);
         }
     }
 
@@ -632,7 +632,7 @@ public class TaskPasteSchematicPerChunkCommand extends TaskPasteSchematicPerChun
 
         if (this.mc.player != null && this.shouldEnableFeedback)
         {
-            this.mc.player.sendChatMessage("/gamerule sendCommandFeedback true");
+            this.mc.player.chat("/gamerule sendCommandFeedback true");
         }
 
         DataManager.removeChatListener(this.gameRuleListener);

@@ -8,39 +8,39 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
+import net.minecraft.CrashReport;
+import net.minecraft.CrashReportCategory;
+import net.minecraft.ReportedException;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.Vec3;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferBuilderStorage;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Frustum;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.Shader;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.util.crash.CrashException;
-import net.minecraft.util.crash.CrashReport;
-import net.minecraft.util.crash.CrashReportSection;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockPos.Mutable;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.Matrix4f;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
-import net.minecraft.world.BlockRenderView;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.math.Matrix4f;
+import com.mojang.math.Vector3f;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.config.Hotkeys;
 import fi.dy.masa.litematica.data.DataManager;
@@ -52,13 +52,13 @@ import fi.dy.masa.malilib.util.SubChunkPos;
 
 public class WorldRendererSchematic
 {
-    private final MinecraftClient mc;
+    private final Minecraft mc;
     private final EntityRenderDispatcher entityRenderDispatcher;
-    private final BlockRenderManager blockRenderManager;
+    private final BlockRenderDispatcher blockRenderManager;
     private final BlockModelRendererSchematic blockModelRenderer;
     private final Set<BlockEntity> blockEntities = new HashSet<>();
     private final List<ChunkRendererSchematicVbo> renderInfos = new ArrayList<>(1024);
-    private final BufferBuilderStorage bufferBuilders;
+    private final RenderBuffers bufferBuilders;
     private Set<ChunkRendererSchematicVbo> chunksToUpdate = new LinkedHashSet<>();
     private WorldSchematic world;
     private ChunkRenderDispatcherSchematic chunkRendererDispatcher;
@@ -89,15 +89,15 @@ public class WorldRendererSchematic
     private double lastTranslucentSortZ;
     private boolean displayListEntitiesDirty = true;
 
-    public WorldRendererSchematic(MinecraftClient mc)
+    public WorldRendererSchematic(Minecraft mc)
     {
         this.mc = mc;
         this.entityRenderDispatcher = mc.getEntityRenderDispatcher();
-        this.bufferBuilders = mc.getBufferBuilders();
+        this.bufferBuilders = mc.renderBuffers();
 
         this.renderChunkFactory = ChunkRendererSchematicVbo::new;
 
-        this.blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
+        this.blockRenderManager = Minecraft.getInstance().getBlockRenderer();
         this.blockModelRenderer = new BlockModelRendererSchematic(mc.getBlockColors());
     }
 
@@ -115,7 +115,7 @@ public class WorldRendererSchematic
     {
         int rcTotal = this.chunkRendererDispatcher != null ? this.chunkRendererDispatcher.renderers.length : 0;
         int rcRendered = this.chunkRendererDispatcher != null ? this.getRenderedChunks() : 0;
-        return String.format("C: %d/%d %sD: %d, L: %d, %s", rcRendered, rcTotal, this.mc.chunkCullingEnabled ? "(s) " : "", this.renderDistanceChunks, 0, this.renderDispatcher == null ? "null" : this.renderDispatcher.getDebugInfo());
+        return String.format("C: %d/%d %sD: %d, L: %d, %s", rcRendered, rcTotal, this.mc.smartCull ? "(s) " : "", this.renderDistanceChunks, 0, this.renderDispatcher == null ? "null" : this.renderDispatcher.getDebugInfo());
     }
 
     public String getDebugInfoEntities()
@@ -186,7 +186,7 @@ public class WorldRendererSchematic
             }
 
             this.displayListEntitiesDirty = true;
-            this.renderDistanceChunks = this.mc.options.viewDistance;
+            this.renderDistanceChunks = this.mc.options.renderDistance;
 
             if (this.chunkRendererDispatcher != null)
             {
@@ -223,7 +223,7 @@ public class WorldRendererSchematic
     {
         this.world.getProfiler().push("setup_terrain");
 
-        if (this.chunkRendererDispatcher == null || this.mc.options.viewDistance != this.renderDistanceChunks)
+        if (this.chunkRendererDispatcher == null || this.mc.options.renderDistance != this.renderDistanceChunks)
         {
             this.loadRenderers();
         }
@@ -242,9 +242,9 @@ public class WorldRendererSchematic
         double entityX = entity.getX();
         double entityY = entity.getY();
         double entityZ = entity.getZ();
-        int chunkX = ChunkSectionPos.getSectionCoord(entityX);
-        int chunkY = ChunkSectionPos.getSectionCoord(entityY);
-        int chunkZ = ChunkSectionPos.getSectionCoord(entityZ);
+        int chunkX = SectionPos.posToSectionCoord(entityX);
+        int chunkY = SectionPos.posToSectionCoord(entityY);
+        int chunkZ = SectionPos.posToSectionCoord(entityZ);
 
         double diffX = entityX - this.lastCameraChunkUpdateX;
         double diffY = entityY - this.lastCameraChunkUpdateY;
@@ -264,20 +264,20 @@ public class WorldRendererSchematic
             this.chunkRendererDispatcher.updateCameraPosition(entityX, entityZ);
         }
 
-        this.world.getProfiler().swap("renderlist_camera");
+        this.world.getProfiler().popPush("renderlist_camera");
 
-        Vec3d cameraPos = camera.getPos();
+        Vec3 cameraPos = camera.getPosition();
         double cameraX = cameraPos.x;
         double cameraY = cameraPos.y;
         double cameraZ = cameraPos.z;
 
         this.renderDispatcher.setCameraPosition(cameraPos);
 
-        this.world.getProfiler().swap("culling");
-        BlockPos viewPos = new BlockPos(cameraX, cameraY + (double) entity.getStandingEyeHeight(), cameraZ);
+        this.world.getProfiler().popPush("culling");
+        BlockPos viewPos = new BlockPos(cameraX, cameraY + (double) entity.getEyeHeight(), cameraZ);
         final int centerChunkX = (viewPos.getX() >> 4);
         final int centerChunkZ = (viewPos.getZ() >> 4);
-        final int renderDistance = this.mc.options.viewDistance;
+        final int renderDistance = this.mc.options.renderDistance;
         SubChunkPos viewSubChunk = new SubChunkPos(centerChunkX, viewPos.getY() >> 4, centerChunkZ);
         BlockPos viewPosSubChunk = new BlockPos(viewSubChunk.getX() << 4, viewSubChunk.getY() << 4, viewSubChunk.getZ() << 4);
 
@@ -285,15 +285,15 @@ public class WorldRendererSchematic
                 entityX != this.lastCameraX ||
                 entityY != this.lastCameraY ||
                 entityZ != this.lastCameraZ ||
-                entity.getPitch() != this.lastCameraPitch ||
-                entity.getYaw() != this.lastCameraYaw;
+                entity.getXRot() != this.lastCameraPitch ||
+                entity.getYRot() != this.lastCameraYaw;
         this.lastCameraX = cameraX;
         this.lastCameraY = cameraY;
         this.lastCameraZ = cameraZ;
-        this.lastCameraPitch = camera.getPitch();
-        this.lastCameraYaw = camera.getYaw();
+        this.lastCameraPitch = camera.getXRot();
+        this.lastCameraYaw = camera.getYRot();
 
-        this.world.getProfiler().swap("update");
+        this.world.getProfiler().popPush("update");
 
         if (this.displayListEntitiesDirty)
         {
@@ -312,8 +312,8 @@ public class WorldRendererSchematic
 
             //if (GuiBase.isCtrlDown()) System.out.printf("sorted positions: %d\n", positions.size());
 
-            this.world.getProfiler().swap("iteration");
-            BlockPos.Mutable subChunkCornerPos = new Mutable();
+            this.world.getProfiler().popPush("iteration");
+            BlockPos.MutableBlockPos subChunkCornerPos = new MutableBlockPos();
 
             //while (queuePositions.isEmpty() == false)
             for (SubChunkPos subChunk : positions)
@@ -323,7 +323,7 @@ public class WorldRendererSchematic
                 // have been already properly loaded on the client
                 if (Math.abs(subChunk.getX() - centerChunkX) <= renderDistance &&
                     Math.abs(subChunk.getZ() - centerChunkZ) <= renderDistance &&
-                    this.world.getChunkProvider().isChunkLoaded(subChunk.getX(), subChunk.getZ()))
+                    this.world.getChunkProvider().hasChunk(subChunk.getX(), subChunk.getZ()))
                 {
                     subChunkCornerPos.set(subChunk.getX() << 4, subChunk.getY() << 4, subChunk.getZ() << 4);
                     ChunkRendererSchematicVbo chunkRenderer = this.chunkRendererDispatcher.getChunkRenderer(subChunkCornerPos);
@@ -344,7 +344,7 @@ public class WorldRendererSchematic
             this.world.getProfiler().pop();
         }
 
-        this.world.getProfiler().swap("rebuild_near");
+        this.world.getProfiler().popPush("rebuild_near");
         Set<ChunkRendererSchematicVbo> set = this.chunksToUpdate;
         this.chunksToUpdate = new LinkedHashSet<>();
 
@@ -353,8 +353,8 @@ public class WorldRendererSchematic
             if (chunkRendererTmp.needsUpdate() || set.contains(chunkRendererTmp))
             {
                 this.displayListEntitiesDirty = true;
-                BlockPos pos = chunkRendererTmp.getOrigin().add(8, 8, 8);
-                boolean isNear = pos.getSquaredDistance(viewPos) < 1024.0D;
+                BlockPos pos = chunkRendererTmp.getOrigin().offset(8, 8, 8);
+                boolean isNear = pos.distSqr(viewPos) < 1024.0D;
 
                 if (chunkRendererTmp.needsImmediateUpdate() == false && isNear == false)
                 {
@@ -418,15 +418,15 @@ public class WorldRendererSchematic
         }
     }
 
-    public int renderBlockLayer(RenderLayer renderLayer, MatrixStack matrices, Camera camera, Matrix4f projMatrix)
+    public int renderBlockLayer(RenderType renderLayer, PoseStack matrices, Camera camera, Matrix4f projMatrix)
     {
         this.world.getProfiler().push("render_block_layer_" + renderLayer.toString());
 
-        boolean isTranslucent = renderLayer == RenderLayer.getTranslucent();
+        boolean isTranslucent = renderLayer == RenderType.translucent();
 
-        renderLayer.startDrawing();
+        renderLayer.setupRenderState();
         //RenderUtils.disableDiffuseLighting();
-        Vec3d cameraPos = camera.getPos();
+        Vec3 cameraPos = camera.getPosition();
         double x = cameraPos.x;
         double y = cameraPos.y;
         double z = cameraPos.z;
@@ -459,7 +459,7 @@ public class WorldRendererSchematic
         }
 
         this.world.getProfiler().push("filter_empty");
-        this.world.getProfiler().swap("render");
+        this.world.getProfiler().popPush("render");
 
         boolean reverse = isTranslucent;
         int startIndex = reverse ? this.renderInfos.size() - 1 : 0;
@@ -467,8 +467,8 @@ public class WorldRendererSchematic
         int increment = reverse ? -1 : 1;
         int count = 0;
 
-        Shader shader = RenderSystem.getShader();
-        BufferRenderer.unbindAll();
+        ShaderInstance shader = RenderSystem.getShader();
+        BufferUploader.reset();
 
         boolean renderAsTranslucent = Configs.Visuals.RENDER_BLOCKS_AS_TRANSLUCENT.getBooleanValue();
 
@@ -480,9 +480,9 @@ public class WorldRendererSchematic
 
         initShader(shader, matrices, projMatrix);
         RenderSystem.setupShaderLights(shader);
-        shader.bind();
+        shader.apply();
 
-        GlUniform chunkOffsetUniform = shader.chunkOffset;
+        Uniform chunkOffsetUniform = shader.CHUNK_OFFSET;
         boolean startedDrawing = false;
 
         for (int i = startIndex; i != stopIndex; i += increment)
@@ -501,7 +501,7 @@ public class WorldRendererSchematic
                 }
 
                 buffer.bind();
-                buffer.drawVertices();
+                buffer.drawChunkLayer();
                 startedDrawing = true;
 
                 ++count;
@@ -515,19 +515,19 @@ public class WorldRendererSchematic
 
         if (chunkOffsetUniform != null)
         {
-            chunkOffsetUniform.set(Vec3f.ZERO);
+            chunkOffsetUniform.set(Vector3f.ZERO);
         }
 
-        shader.unbind();
+        shader.clear();
 
         if (startedDrawing)
         {
-            renderLayer.getVertexFormat().endDrawing();
+            renderLayer.format().clearBufferState();
         }
 
         VertexBuffer.unbind();
         VertexBuffer.unbindVertexArray();
-        renderLayer.endDrawing();
+        renderLayer.clearRenderState();
 
         this.world.getProfiler().pop();
         this.world.getProfiler().pop();
@@ -535,41 +535,41 @@ public class WorldRendererSchematic
         return count;
     }
 
-    public void renderBlockOverlays(MatrixStack matrices, Camera camera, Matrix4f projMatrix)
+    public void renderBlockOverlays(PoseStack matrices, Camera camera, Matrix4f projMatrix)
     {
         this.renderBlockOverlay(OverlayRenderType.OUTLINE, matrices, camera, projMatrix);
         this.renderBlockOverlay(OverlayRenderType.QUAD, matrices, camera, projMatrix);
     }
 
-    private static void initShader(Shader shader, MatrixStack matrices, Matrix4f projMatrix)
+    private static void initShader(ShaderInstance shader, PoseStack matrices, Matrix4f projMatrix)
     {
-        for (int i = 0; i < 12; ++i) shader.addSampler("Sampler" + i, RenderSystem.getShaderTexture(i));
+        for (int i = 0; i < 12; ++i) shader.setSampler("Sampler" + i, RenderSystem.getShaderTexture(i));
 
-        if (shader.modelViewMat != null) shader.modelViewMat.set(matrices.peek().getModel());
-        if (shader.projectionMat != null) shader.projectionMat.set(projMatrix);
-        if (shader.colorModulator != null) shader.colorModulator.set(RenderSystem.getShaderColor());
-        if (shader.fogStart != null) shader.fogStart.set(RenderSystem.getShaderFogStart());
-        if (shader.fogEnd != null) shader.fogEnd.set(RenderSystem.getShaderFogEnd());
-        if (shader.fogColor != null) shader.fogColor.set(RenderSystem.getShaderFogColor());
-        if (shader.textureMat != null) shader.textureMat.set(RenderSystem.getTextureMatrix());
-        if (shader.gameTime != null) shader.gameTime.set(RenderSystem.getShaderGameTime());
+        if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(matrices.last().pose());
+        if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(projMatrix);
+        if (shader.COLOR_MODULATOR != null) shader.COLOR_MODULATOR.set(RenderSystem.getShaderColor());
+        if (shader.FOG_START != null) shader.FOG_START.set(RenderSystem.getShaderFogStart());
+        if (shader.FOG_END != null) shader.FOG_END.set(RenderSystem.getShaderFogEnd());
+        if (shader.FOG_COLOR != null) shader.FOG_COLOR.set(RenderSystem.getShaderFogColor());
+        if (shader.TEXTURE_MATRIX != null) shader.TEXTURE_MATRIX.set(RenderSystem.getTextureMatrix());
+        if (shader.GAME_TIME != null) shader.GAME_TIME.set(RenderSystem.getShaderGameTime());
     }
 
-    private void renderBlockOverlay(OverlayRenderType type, MatrixStack matrixStack, Camera camera, Matrix4f projMatrix)
+    private void renderBlockOverlay(OverlayRenderType type, PoseStack matrixStack, Camera camera, Matrix4f projMatrix)
     {
-        RenderLayer renderLayer = RenderLayer.getTranslucent();
-        renderLayer.startDrawing();
+        RenderType renderLayer = RenderType.translucent();
+        renderLayer.setupRenderState();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
-        Vec3d cameraPos = camera.getPos();
+        Vec3 cameraPos = camera.getPosition();
         double x = cameraPos.x;
         double y = cameraPos.y;
         double z = cameraPos.z;
 
         this.world.getProfiler().push("overlay_" + type.name());
-        this.world.getProfiler().swap("render");
+        this.world.getProfiler().popPush("render");
 
         boolean renderThrough = Configs.Visuals.SCHEMATIC_OVERLAY_RENDER_THROUGH.getBooleanValue() || Hotkeys.RENDER_OVERLAY_THROUGH_BLOCKS.getKeybind().isKeybindHeld();
 
@@ -582,11 +582,11 @@ public class WorldRendererSchematic
             RenderSystem.enableDepthTest();
         }
 
-        Shader originalShader = RenderSystem.getShader();
+        ShaderInstance originalShader = RenderSystem.getShader();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-        Shader shader = RenderSystem.getShader();
-        BufferRenderer.unbindAll();
+        ShaderInstance shader = RenderSystem.getShader();
+        BufferUploader.reset();
 
         for (int i = this.renderInfos.size() - 1; i >= 0; --i)
         {
@@ -601,15 +601,15 @@ public class WorldRendererSchematic
                     VertexBuffer buffer = renderer.getOverlayVertexBuffer(type);
                     BlockPos chunkOrigin = renderer.getOrigin();
 
-                    matrixStack.push();
+                    matrixStack.pushPose();
                     matrixStack.translate(chunkOrigin.getX() - x, chunkOrigin.getY() - y, chunkOrigin.getZ() - z);
-                    buffer.setShader(matrixStack.peek().getModel(), projMatrix, shader);
-                    matrixStack.pop();
+                    buffer.drawWithShader(matrixStack.last().pose(), projMatrix, shader);
+                    matrixStack.popPose();
                 }
             }
         }
 
-        renderLayer.endDrawing();
+        renderLayer.clearRenderState();
 
         RenderSystem.setShader(() -> originalShader);
         RenderSystem.disableBlend();
@@ -617,47 +617,47 @@ public class WorldRendererSchematic
         this.world.getProfiler().pop();
     }
 
-    public boolean renderBlock(BlockRenderView world, BlockState state, BlockPos pos, MatrixStack matrices, BufferBuilder bufferBuilderIn)
+    public boolean renderBlock(BlockAndTintGetter world, BlockState state, BlockPos pos, PoseStack matrices, BufferBuilder bufferBuilderIn)
     {
         try
         {
-            BlockRenderType renderType = state.getRenderType();
+            RenderShape renderType = state.getRenderShape();
 
-            if (renderType == BlockRenderType.INVISIBLE)
+            if (renderType == RenderShape.INVISIBLE)
             {
                 return false;
             }
             else
             {
-                return renderType == BlockRenderType.MODEL &&
-                       this.blockModelRenderer.renderModel(world, this.getModelForState(state), state, pos, matrices, bufferBuilderIn, state.getRenderingSeed(pos));
+                return renderType == RenderShape.MODEL &&
+                       this.blockModelRenderer.renderModel(world, this.getModelForState(state), state, pos, matrices, bufferBuilderIn, state.getSeed(pos));
             }
         }
         catch (Throwable throwable)
         {
-            CrashReport crashreport = CrashReport.create(throwable, "Tesselating block in world");
-            CrashReportSection crashreportcategory = crashreport.addElement("Block being tesselated");
-            CrashReportSection.addBlockInfo(crashreportcategory, world, pos, state);
-            throw new CrashException(crashreport);
+            CrashReport crashreport = CrashReport.forThrowable(throwable, "Tesselating block in world");
+            CrashReportCategory crashreportcategory = crashreport.addCategory("Block being tesselated");
+            CrashReportCategory.populateBlockDetails(crashreportcategory, world, pos, state);
+            throw new ReportedException(crashreport);
         }
     }
 
-    public boolean renderFluid(BlockRenderView world, FluidState state, BlockPos pos, BufferBuilder bufferBuilderIn)
+    public boolean renderFluid(BlockAndTintGetter world, FluidState state, BlockPos pos, BufferBuilder bufferBuilderIn)
     {
-        return this.blockRenderManager.renderFluid(pos, world, bufferBuilderIn, state);
+        return this.blockRenderManager.renderLiquid(pos, world, bufferBuilderIn, state);
     }
 
     public BakedModel getModelForState(BlockState state)
     {
-        if (state.getRenderType() == BlockRenderType.ENTITYBLOCK_ANIMATED)
+        if (state.getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED)
         {
-            return this.blockRenderManager.getModels().getModelManager().getMissingModel();
+            return this.blockRenderManager.getBlockModelShaper().getModelManager().getMissingModel();
         }
 
-        return this.blockRenderManager.getModel(state);
+        return this.blockRenderManager.getBlockModel(state);
     }
 
-    public void renderEntities(Camera camera, Frustum frustum, MatrixStack matrices, float partialTicks)
+    public void renderEntities(Camera camera, Frustum frustum, PoseStack matrices, float partialTicks)
     {
         if (this.renderEntitiesStartupCounter > 0)
         {
@@ -667,12 +667,12 @@ public class WorldRendererSchematic
         {
             this.world.getProfiler().push("prepare");
 
-            double cameraX = camera.getPos().x;
-            double cameraY = camera.getPos().y;
-            double cameraZ = camera.getPos().z;
+            double cameraX = camera.getPosition().x;
+            double cameraY = camera.getPosition().y;
+            double cameraZ = camera.getPosition().z;
 
-            MinecraftClient.getInstance().getBlockEntityRenderDispatcher().configure(this.world, camera, this.mc.crosshairTarget);
-            this.entityRenderDispatcher.configure(this.world, camera, this.mc.targetedEntity);
+            Minecraft.getInstance().getBlockEntityRenderDispatcher().prepare(this.world, camera, this.mc.hitResult);
+            this.entityRenderDispatcher.prepare(this.world, camera, this.mc.crosshairPickEntity);
 
             this.countEntitiesTotal = 0;
             this.countEntitiesRendered = 0;
@@ -680,10 +680,10 @@ public class WorldRendererSchematic
 
             this.countEntitiesTotal = this.world.getRegularEntityCount();
 
-            this.world.getProfiler().swap("regular_entities");
+            this.world.getProfiler().popPush("regular_entities");
             //List<Entity> entitiesMultipass = Lists.<Entity>newArrayList();
 
-            VertexConsumerProvider.Immediate entityVertexConsumers = this.bufferBuilders.getEntityVertexConsumers();
+            MultiBufferSource.BufferSource entityVertexConsumers = this.bufferBuilders.bufferSource();
             LayerRange layerRange = DataManager.getRenderLayerRange();
 
             for (ChunkRendererSchematicVbo chunkRenderer : this.renderInfos)
@@ -709,15 +709,15 @@ public class WorldRendererSchematic
                             double y = entityTmp.getY() - cameraY;
                             double z = entityTmp.getZ() - cameraZ;
 
-                            this.entityRenderDispatcher.render(entityTmp, x, y, z, entityTmp.getYaw(), 1.0f, matrices, entityVertexConsumers, this.entityRenderDispatcher.getLight(entityTmp, partialTicks));
+                            this.entityRenderDispatcher.render(entityTmp, x, y, z, entityTmp.getYRot(), 1.0f, matrices, entityVertexConsumers, this.entityRenderDispatcher.getPackedLightCoords(entityTmp, partialTicks));
                             ++this.countEntitiesRendered;
                         }
                     }
                 }
             }
 
-            this.world.getProfiler().swap("block_entities");
-            BlockEntityRenderDispatcher renderer = MinecraftClient.getInstance().getBlockEntityRenderDispatcher();
+            this.world.getProfiler().popPush("block_entities");
+            BlockEntityRenderDispatcher renderer = Minecraft.getInstance().getBlockEntityRenderDispatcher();
 
             for (ChunkRendererSchematicVbo chunkRenderer : this.renderInfos)
             {
@@ -727,7 +727,7 @@ public class WorldRendererSchematic
                 if (tiles.isEmpty() == false) 
                 {
                     BlockPos chunkOrigin = chunkRenderer.getOrigin();
-                    ChunkSchematic chunk = this.world.getChunkProvider().getChunk(chunkOrigin.getX() >> 4, chunkOrigin.getZ() >> 4);
+                    ChunkSchematic chunk = this.world.getChunkProvider().getChunkForLighting(chunkOrigin.getX() >> 4, chunkOrigin.getZ() >> 4);
 
                     if (chunk != null && data.getTimeBuilt() >= chunk.getTimeCreated())
                     {
@@ -735,13 +735,13 @@ public class WorldRendererSchematic
                         {
                             try
                             {
-                                BlockPos pos = te.getPos();
-                                matrices.push();
+                                BlockPos pos = te.getBlockPos();
+                                matrices.pushPose();
                                 matrices.translate(pos.getX() - cameraX, pos.getY() - cameraY, pos.getZ() - cameraZ);
 
                                 renderer.render(te, partialTicks, matrices, entityVertexConsumers);
 
-                                matrices.pop();
+                                matrices.popPose();
                             }
                             catch (Exception ignore)
                             {
@@ -757,13 +757,13 @@ public class WorldRendererSchematic
                 {
                     try
                     {
-                        BlockPos pos = te.getPos();
-                        matrices.push();
+                        BlockPos pos = te.getBlockPos();
+                        matrices.pushPose();
                         matrices.translate(pos.getX() - cameraX, pos.getY() - cameraY, pos.getZ() - cameraZ);
 
                         renderer.render(te, partialTicks, matrices, entityVertexConsumers);
 
-                        matrices.pop();
+                        matrices.popPose();
                     }
                     catch (Exception ignore)
                     {

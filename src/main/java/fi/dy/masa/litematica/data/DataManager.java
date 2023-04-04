@@ -8,18 +8,18 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import net.minecraft.core.Registry;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.mojang.brigadier.StringReader;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.StringNbtReader;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.litematica.Reference;
 import fi.dy.masa.litematica.config.Configs;
@@ -50,7 +50,7 @@ public class DataManager implements IDirectoryCache
     private static final Pattern PATTERN_ITEM_NBT = Pattern.compile("^(?<name>[a-z0-9\\._-]+:[a-z0-9\\._-]+)(?<nbt>\\{.*\\})$");
     private static final Pattern PATTERN_ITEM_BASE = Pattern.compile("^(?<name>(?:[a-z0-9\\._-]+:)[a-z0-9\\._-]+)$");
     private static final Map<String, File> LAST_DIRECTORIES = new HashMap<>();
-    private static final ArrayList<Consumer<Text>> CHAT_LISTENERS = new ArrayList<>();
+    private static final ArrayList<Consumer<Component>> CHAT_LISTENERS = new ArrayList<>();
 
     private static ItemStack toolItem = new ItemStack(Items.STICK);
     private static ConfigGuiTab configGuiTab = ConfigGuiTab.GENERIC;
@@ -96,19 +96,19 @@ public class DataManager implements IDirectoryCache
         return toolItem;
     }
 
-    public static void addChatListener(Consumer<Text> listener)
+    public static void addChatListener(Consumer<Component> listener)
     {
         CHAT_LISTENERS.add(listener);
     }
 
-    public static void removeChatListener(Consumer<Text> listener)
+    public static void removeChatListener(Consumer<Component> listener)
     {
         CHAT_LISTENERS.remove(listener);
     }
 
-    public static void onChatMessage(Text text)
+    public static void onChatMessage(Component text)
     {
-        for (Consumer<Text> listener : CHAT_LISTENERS)
+        for (Consumer<Component> listener : CHAT_LISTENERS)
         {
             listener.accept(text);
         }
@@ -491,12 +491,12 @@ public class DataManager implements IDirectoryCache
             Matcher matcherBase = PATTERN_ITEM_BASE.matcher(itemNameIn);
 
             String itemName = null;
-            NbtCompound nbt = null;
+            CompoundTag nbt = null;
 
             if (matcherNbt.matches())
             {
                 itemName = matcherNbt.group("name");
-                nbt = (new StringNbtReader(new StringReader(matcherNbt.group("nbt")))).parseCompound();
+                nbt = (new TagParser(new StringReader(matcherNbt.group("nbt")))).readStruct();
             }
             else if (matcherBase.matches())
             {
@@ -505,12 +505,12 @@ public class DataManager implements IDirectoryCache
 
             if (itemName != null)
             {
-                Item item = Registry.ITEM.get(new Identifier(itemName));
+                Item item = Registry.ITEM.get(new ResourceLocation(itemName));
 
                 if (item != null && item != Items.AIR)
                 {
                     toolItem = new ItemStack(item);
-                    toolItem.setNbt(nbt);
+                    toolItem.setTag(nbt);
                     return;
                 }
             }
@@ -521,6 +521,6 @@ public class DataManager implements IDirectoryCache
 
         // Fall back to a stick
         toolItem = new ItemStack(Items.STICK);
-        Configs.Generic.TOOL_ITEM.setValueFromString(Registry.ITEM.getId(Items.STICK).toString());
+        Configs.Generic.TOOL_ITEM.setValueFromString(Registry.ITEM.getKey(Items.STICK).toString());
     }
 }

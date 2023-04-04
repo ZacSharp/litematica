@@ -1,9 +1,5 @@
 package fi.dy.masa.litematica.event;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.litematica.Reference;
 import fi.dy.masa.litematica.config.Configs;
@@ -28,6 +24,10 @@ import fi.dy.masa.malilib.hotkeys.IMouseInputHandler;
 import fi.dy.masa.malilib.hotkeys.KeybindMulti;
 import fi.dy.masa.malilib.util.GuiUtils;
 import fi.dy.masa.malilib.util.InfoUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
 
 public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IMouseInputHandler
 {
@@ -62,17 +62,17 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     {
         if (eventKeyState)
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
-            if (mc.options.keyUse.matchesKey(keyCode, scanCode))
+            if (mc.options.keyUse.matches(keyCode, scanCode))
             {
                 return this.handleUseKey(mc);
             }
-            else if (mc.options.keyAttack.matchesKey(keyCode, scanCode))
+            else if (mc.options.keyAttack.matches(keyCode, scanCode))
             {
                 return this.handleAttackKey(mc);
             }
-            else if (mc.options.keyScreenshot.matchesKey(keyCode, scanCode) && GuiSchematicManager.hasPendingPreviewTask())
+            else if (mc.options.keyScreenshot.matches(keyCode, scanCode) && GuiSchematicManager.hasPendingPreviewTask())
             {
                 return GuiSchematicManager.setPreviewImage();
             }
@@ -84,10 +84,10 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     @Override
     public boolean onMouseClick(int mouseX, int mouseY, int eventButton, boolean eventButtonState)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         // Tool enabled, and not in a GUI
-        if (GuiUtils.getCurrentScreen() == null && mc.world != null && mc.player != null && eventButtonState)
+        if (GuiUtils.getCurrentScreen() == null && mc.level != null && mc.player != null && eventButtonState)
         {
             if (eventButtonState && mc.options.keyUse.matchesMouse(eventButton))
             {
@@ -105,7 +105,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     @Override
     public boolean onMouseScroll(int mouseX, int mouseY, double dWheel)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         if (Configs.Generic.DEBUG_LOGGING.getBooleanValue())
         {
@@ -113,7 +113,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
         }
 
         // Not in a GUI
-        if (GuiUtils.getCurrentScreen() == null && mc.world != null && mc.player != null)
+        if (GuiUtils.getCurrentScreen() == null && mc.level != null && mc.player != null)
         {
             return this.handleMouseScroll(dWheel, mc);
         }
@@ -121,7 +121,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
         return false;
     }
 
-    private boolean handleMouseScroll(double dWheel, MinecraftClient mc)
+    private boolean handleMouseScroll(double dWheel, Minecraft mc)
     {
         boolean toolEnabled = Configs.Visuals.ENABLE_RENDERING.getBooleanValue() && Configs.Generic.TOOL_ITEM_ENABLED.getBooleanValue();
 
@@ -149,7 +149,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
                 {
                     AreaSelection area = sm.getCurrentSelection();
                     BlockPos old = area.getEffectiveOrigin();
-                    area.moveEntireSelectionTo(old.offset(EntityUtils.getClosestLookingDirection(entity), amount), false);
+                    area.moveEntireSelectionTo(old.relative(EntityUtils.getClosestLookingDirection(entity), amount), false);
                     return true;
                 }
                 else if (mode == ToolMode.MOVE)
@@ -241,7 +241,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
         return true;
     }
 
-    private boolean handleAttackKey(MinecraftClient mc)
+    private boolean handleAttackKey(Minecraft mc)
     {
         if (mc.player != null && DataManager.getToolMode() == ToolMode.REBUILD && KeybindMulti.getTriggeredCount() == 0)
         {
@@ -266,7 +266,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
         return false;
     }
 
-    private boolean handleUseKey(MinecraftClient mc)
+    private boolean handleUseKey(Minecraft mc)
     {
         if (mc.player != null)
         {

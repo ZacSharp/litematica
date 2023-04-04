@@ -2,7 +2,7 @@ package fi.dy.masa.litematica.gui;
 
 import java.io.File;
 import java.util.Collection;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.data.SchematicHolder;
 import fi.dy.masa.litematica.gui.GuiMainMenu.ButtonListenerChangeMenu;
@@ -179,7 +179,7 @@ public class GuiSchematicLoad extends GuiSchematicBrowserBase
 
                     if (DataManager.getCreatePlacementOnLoad())
                     {
-                        BlockPos pos = new BlockPos(this.gui.mc.player.getPos());
+                        BlockPos pos = new BlockPos(this.gui.mc.player.position());
                         String name = schematic.getMetadata().getName();
                         boolean enabled = GuiBase.isShiftDown() == false;
 

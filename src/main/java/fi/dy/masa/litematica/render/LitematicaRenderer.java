@@ -1,14 +1,14 @@
 package fi.dy.masa.litematica.render;
 
 import javax.annotation.Nullable;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.culling.Frustum;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Frustum;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Matrix4f;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Matrix4f;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.config.Hotkeys;
 import fi.dy.masa.litematica.render.schematic.WorldRendererSchematic;
@@ -18,7 +18,7 @@ public class LitematicaRenderer
 {
     private static final LitematicaRenderer INSTANCE = new LitematicaRenderer();
 
-    private MinecraftClient mc;
+    private Minecraft mc;
     private WorldRendererSchematic worldRenderer;
     private Frustum frustum;
     private int frameCount;
@@ -42,7 +42,7 @@ public class LitematicaRenderer
     {
         if (this.worldRenderer == null)
         {
-            this.mc = MinecraftClient.getInstance();
+            this.mc = Minecraft.getInstance();
             this.worldRenderer = new WorldRendererSchematic(this.mc);
         }
 
@@ -209,7 +209,7 @@ public class LitematicaRenderer
     }
     */
 
-    public void renderSchematicOverlay(MatrixStack matrices, Matrix4f projMatrix)
+    public void renderSchematicOverlay(PoseStack matrices, Matrix4f projMatrix)
     {
         boolean invert = Hotkeys.INVERT_OVERLAY_RENDER_STATE.getKeybind().isKeybindHeld();
 
@@ -258,10 +258,10 @@ public class LitematicaRenderer
 
             this.calculateFinishTime();
 
-            this.mc.getProfiler().swap("litematica_terrain_setup");
+            this.mc.getProfiler().popPush("litematica_terrain_setup");
             worldRenderer.setupTerrain(this.getCamera(), frustum, this.frameCount++, this.mc.player.isSpectator());
 
-            this.mc.getProfiler().swap("litematica_update_chunks");
+            this.mc.getProfiler().popPush("litematica_update_chunks");
             worldRenderer.updateChunks(this.finishTimeNano);
 
             this.mc.getProfiler().pop();
@@ -270,7 +270,7 @@ public class LitematicaRenderer
         }
     }
 
-    public void piecewiseRenderSolid(MatrixStack matrices, Matrix4f projMatrix)
+    public void piecewiseRenderSolid(PoseStack matrices, Matrix4f projMatrix)
     {
         if (this.renderPiecewiseBlocks)
         {
@@ -282,7 +282,7 @@ public class LitematicaRenderer
                 RenderSystem.polygonOffset(-0.3f, -0.6f);
             }
 
-            this.getWorldRenderer().renderBlockLayer(RenderLayer.getSolid(), matrices, this.getCamera(), projMatrix);
+            this.getWorldRenderer().renderBlockLayer(RenderType.solid(), matrices, this.getCamera(), projMatrix);
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -294,7 +294,7 @@ public class LitematicaRenderer
         }
     }
 
-    public void piecewiseRenderCutoutMipped(MatrixStack matrices, Matrix4f projMatrix)
+    public void piecewiseRenderCutoutMipped(PoseStack matrices, Matrix4f projMatrix)
     {
         if (this.renderPiecewiseBlocks)
         {
@@ -306,7 +306,7 @@ public class LitematicaRenderer
                 RenderSystem.polygonOffset(-0.3f, -0.6f);
             }
 
-            this.getWorldRenderer().renderBlockLayer(RenderLayer.getCutoutMipped(), matrices, this.getCamera(), projMatrix);
+            this.getWorldRenderer().renderBlockLayer(RenderType.cutoutMipped(), matrices, this.getCamera(), projMatrix);
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -318,7 +318,7 @@ public class LitematicaRenderer
         }
     }
 
-    public void piecewiseRenderCutout(MatrixStack matrices, Matrix4f projMatrix)
+    public void piecewiseRenderCutout(PoseStack matrices, Matrix4f projMatrix)
     {
         if (this.renderPiecewiseBlocks)
         {
@@ -330,7 +330,7 @@ public class LitematicaRenderer
                 RenderSystem.polygonOffset(-0.3f, -0.6f);
             }
 
-            this.getWorldRenderer().renderBlockLayer(RenderLayer.getCutout(), matrices, this.getCamera(), projMatrix);
+            this.getWorldRenderer().renderBlockLayer(RenderType.cutout(), matrices, this.getCamera(), projMatrix);
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -342,7 +342,7 @@ public class LitematicaRenderer
         }
     }
 
-    public void piecewiseRenderTranslucent(MatrixStack matrices, Matrix4f projMatrix)
+    public void piecewiseRenderTranslucent(PoseStack matrices, Matrix4f projMatrix)
     {
         if (this.renderPiecewiseBlocks)
         {
@@ -354,7 +354,7 @@ public class LitematicaRenderer
                 RenderSystem.polygonOffset(-0.3f, -0.6f);
             }
 
-            this.getWorldRenderer().renderBlockLayer(RenderLayer.getTranslucent(), matrices, this.getCamera(), projMatrix);
+            this.getWorldRenderer().renderBlockLayer(RenderType.translucent(), matrices, this.getCamera(), projMatrix);
 
             if (this.renderCollidingSchematicBlocks)
             {
@@ -366,24 +366,24 @@ public class LitematicaRenderer
         }
     }
 
-    public void piecewiseRenderOverlay(MatrixStack matrices, Matrix4f matrix4f)
+    public void piecewiseRenderOverlay(PoseStack matrices, Matrix4f matrix4f)
     {
         if (this.renderPiecewiseSchematic)
         {
             this.mc.getProfiler().push("litematica_overlay");
 
-            Framebuffer fb = MinecraftClient.isFabulousGraphicsOrBetter() ? this.mc.worldRenderer.getTranslucentFramebuffer() : null;
+            RenderTarget fb = Minecraft.useShaderTransparency() ? this.mc.levelRenderer.getTranslucentTarget() : null;
 
             if (fb != null)
             {
-                fb.beginWrite(false);
+                fb.bindWrite(false);
             }
 
             this.renderSchematicOverlay(matrices, matrix4f);
 
             if (fb != null)
             {
-                this.mc.getFramebuffer().beginWrite(false);
+                this.mc.getMainRenderTarget().bindWrite(false);
             }
 
             this.mc.getProfiler().pop();
@@ -392,7 +392,7 @@ public class LitematicaRenderer
         this.cleanup();
     }
 
-    public void piecewiseRenderEntities(MatrixStack matrices, float partialTicks)
+    public void piecewiseRenderEntities(PoseStack matrices, float partialTicks)
     {
         if (this.renderPiecewiseBlocks)
         {
@@ -406,7 +406,7 @@ public class LitematicaRenderer
 
     private Camera getCamera()
     {
-        return this.mc.gameRenderer.getCamera();
+        return this.mc.gameRenderer.getMainCamera();
     }
 
     private void cleanup()

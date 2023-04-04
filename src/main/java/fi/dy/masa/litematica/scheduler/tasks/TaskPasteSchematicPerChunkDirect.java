@@ -3,10 +3,10 @@ package fi.dy.masa.litematica.scheduler.tasks;
 import java.util.ArrayList;
 import java.util.Collection;
 import com.google.common.collect.ArrayListMultimap;
+import net.minecraft.Util;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import fi.dy.masa.litematica.render.infohud.InfoHud;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.util.SchematicPlacingUtils;
@@ -35,29 +35,29 @@ public class TaskPasteSchematicPerChunkDirect extends TaskPasteSchematicPerChunk
     @Override
     public boolean canExecute()
     {
-        if (super.canExecute() == false || this.mc.isIntegratedServerRunning() == false)
+        if (super.canExecute() == false || this.mc.hasSingleplayerServer() == false)
         {
             return false;
         }
 
-        World world = WorldUtils.getBestWorld(this.mc);
-        return world != null && world.isClient == false;
+        Level world = WorldUtils.getBestWorld(this.mc);
+        return world != null && world.isClientSide == false;
     }
 
     @Override
     public boolean execute()
     {
-        World world = WorldUtils.getBestWorld(this.mc);
-        MinecraftServer server = this.mc.getServer();
-        long vanillaTickTime = server.lastTickLengths[server.getTicks() % 100];
-        long timeStart = Util.getMeasuringTimeNano();
+        Level world = WorldUtils.getBestWorld(this.mc);
+        MinecraftServer server = this.mc.getSingleplayerServer();
+        long vanillaTickTime = server.tickTimes[server.getTickCount() % 100];
+        long timeStart = Util.getNanos();
         int processed = 0;
 
         this.sortChunkList();
 
         for (int chunkIndex = 0; chunkIndex < this.pendingChunks.size(); ++chunkIndex)
         {
-            long currentTime = Util.getMeasuringTimeNano();
+            long currentTime = Util.getNanos();
             long elapsedTickTime = vanillaTickTime + (currentTime - timeStart);
 
             if (elapsedTickTime >= 60000000L)
@@ -67,7 +67,7 @@ public class TaskPasteSchematicPerChunkDirect extends TaskPasteSchematicPerChunk
 
             ChunkPos pos = this.pendingChunks.get(chunkIndex);
 
-            if (this.canProcessChunk(pos, this.schematicWorld, this.mc.world))
+            if (this.canProcessChunk(pos, this.schematicWorld, this.mc.level))
             {
                 // New list to avoid CME
                 ArrayList<SchematicPlacement> placements = new ArrayList<>(this.placementsPerChunk.get(pos));

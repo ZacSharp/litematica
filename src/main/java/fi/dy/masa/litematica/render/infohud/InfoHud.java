@@ -2,17 +2,17 @@ package fi.dy.masa.litematica.render.infohud;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.malilib.config.HudAlignment;
 import fi.dy.masa.malilib.util.GuiUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
 
 public class InfoHud
 {
     private static final InfoHud INSTANCE = new InfoHud();
 
-    protected final MinecraftClient mc;
+    protected final Minecraft mc;
     protected final List<String> lineList = new ArrayList<>();
     protected final List<IInfoHudRenderer> renderers = new ArrayList<>();
     protected boolean enabled = true;
@@ -24,7 +24,7 @@ public class InfoHud
 
     protected InfoHud()
     {
-        this.mc = MinecraftClient.getInstance();
+        this.mc = Minecraft.getInstance();
     }
 
     public boolean isEnabled()
@@ -58,7 +58,7 @@ public class InfoHud
         return Configs.InfoOverlays.INFO_HUD_OFFSET_Y.getIntegerValue();
     }
 
-    public void renderHud(MatrixStack matrixStack)
+    public void renderHud(PoseStack matrixStack)
     {
         if (this.mc.player != null && this.shouldRender())
         {

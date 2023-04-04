@@ -6,6 +6,9 @@ import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.phys.Vec3;
 import org.apache.logging.log4j.Logger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
@@ -14,11 +17,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.util.math.Vec3d;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexBuffer;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.litematica.render.schematic.ChunkRendererSchematicVbo.OverlayRenderType;
 
@@ -34,7 +34,7 @@ public class ChunkRenderDispatcherLitematica
     private final Queue<ChunkRenderDispatcherLitematica.PendingUpload> queueChunkUploads = Queues.newPriorityQueue();
     private final ChunkRenderWorkerLitematica renderWorker;
     private final int countRenderBuilders;
-    private Vec3d cameraPos;
+    private Vec3 cameraPos;
 
     public ChunkRenderDispatcherLitematica()
     {
@@ -43,7 +43,7 @@ public class ChunkRenderDispatcherLitematica
         //int threadLimitCPU = Math.max(1, MathHelper.clamp(Runtime.getRuntime().availableProcessors(), 1, threadLimitMemory / 5));
         //this.countRenderBuilders = MathHelper.clamp(threadLimitCPU * 10, 1, threadLimitMemory);
         this.countRenderBuilders = 2;
-        this.cameraPos = Vec3d.ZERO;
+        this.cameraPos = Vec3.ZERO;
 
         /*
         if (threadLimitCPU > 1)
@@ -73,12 +73,12 @@ public class ChunkRenderDispatcherLitematica
         this.renderWorker = new ChunkRenderWorkerLitematica(this, new BufferBuilderCache());
     }
 
-    public void setCameraPosition(Vec3d cameraPos)
+    public void setCameraPosition(Vec3 cameraPos)
     {
         this.cameraPos = cameraPos;
     }
 
-    public Vec3d getCameraPos()
+    public Vec3 getCameraPos()
     {
         return this.cameraPos;
     }
@@ -267,10 +267,10 @@ public class ChunkRenderDispatcherLitematica
         return flag;
     }
 
-    public ListenableFuture<Object> uploadChunkBlocks(final RenderLayer layer, final BufferBuilder buffer,
+    public ListenableFuture<Object> uploadChunkBlocks(final RenderType layer, final BufferBuilder buffer,
             final ChunkRendererSchematicVbo renderChunk, final ChunkRenderDataSchematic chunkRenderData, final double distanceSq)
     {
-        if (MinecraftClient.getInstance().isOnThread())
+        if (Minecraft.getInstance().isSameThread())
         {
             //if (GuiBase.isCtrlDown()) System.out.printf("uploadChunkBlocks()\n");
             this.uploadVertexBuffer(buffer, renderChunk.getBlocksVertexBufferByLayer(layer));
@@ -298,7 +298,7 @@ public class ChunkRenderDispatcherLitematica
     public ListenableFuture<Object> uploadChunkOverlay(final OverlayRenderType type, final BufferBuilder buffer,
             final ChunkRendererSchematicVbo renderChunk, final ChunkRenderDataSchematic compiledChunk, final double distanceSq)
     {
-        if (MinecraftClient.getInstance().isOnThread())
+        if (Minecraft.getInstance().isSameThread())
         {
             //if (GuiBase.isCtrlDown()) System.out.printf("uploadChunkOverlay()\n");
             this.uploadVertexBuffer(buffer, renderChunk.getOverlayVertexBuffer(type));
@@ -325,7 +325,7 @@ public class ChunkRenderDispatcherLitematica
 
     private void uploadVertexBuffer(BufferBuilder buffer, VertexBuffer vertexBuffer)
     {
-        vertexBuffer.submitUpload(buffer);
+        vertexBuffer.uploadLater(buffer);
     }
 
     public void clearChunkUpdates()

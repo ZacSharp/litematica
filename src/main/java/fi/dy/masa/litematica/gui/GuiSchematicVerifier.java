@@ -439,7 +439,7 @@ public class GuiSchematicVerifier   extends GuiListBase<BlockMismatchEntry, Widg
                         }
                         else
                         {
-                            verifier.startVerification(this.parent.mc.world, world, this.parent.placement, this.parent);
+                            verifier.startVerification(this.parent.mc.level, world, this.parent.placement, this.parent);
                         }
                     }
                     else

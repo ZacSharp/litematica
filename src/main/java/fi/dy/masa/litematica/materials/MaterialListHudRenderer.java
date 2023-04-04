@@ -2,16 +2,16 @@ package fi.dy.masa.litematica.materials;
 
 import java.util.Collections;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.math.BlockPos;
+import com.mojang.blaze3d.vertex.PoseStack;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.mixin.IMixinHandledScreen;
 import fi.dy.masa.litematica.render.infohud.IInfoHudRenderer;
@@ -28,7 +28,7 @@ import fi.dy.masa.malilib.util.StringUtils;
 
 public class MaterialListHudRenderer implements IInfoHudRenderer
 {
-    protected static BlockState lastLookedAtBlock = Blocks.AIR.getDefaultState();
+    protected static BlockState lastLookedAtBlock = Blocks.AIR.defaultBlockState();
     protected static ItemStack lastLookedAtBlocksItem = ItemStack.EMPTY;
 
     protected final MaterialListBase materialList;
@@ -72,12 +72,12 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
     }
 
     @Override
-    public int render(int xOffset, int yOffset, HudAlignment alignment, MatrixStack matrixStack)
+    public int render(int xOffset, int yOffset, HudAlignment alignment, PoseStack matrixStack)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         long currentTime = System.currentTimeMillis();
         List<MaterialListEntry> list;
-        MatrixStack textStack = matrixStack;
+        PoseStack textStack = matrixStack;
         matrixStack = RenderSystem.getModelViewStack();
 
         if (currentTime - this.lastUpdateTime > 2000)
@@ -97,7 +97,7 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
             return 0;
         }
 
-        TextRenderer font = mc.textRenderer;
+        Font font = mc.font;
         final double scale = Configs.InfoOverlays.MATERIAL_LIST_HUD_SCALE.getDoubleValue();
         final int maxLines = Configs.InfoOverlays.MATERIAL_LIST_HUD_MAX_LINES.getIntegerValue();
         int bgMargin = 2;
@@ -122,12 +122,12 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
         for (int i = 0; i < size; ++i)
         {
             MaterialListEntry entry = list.get(i);
-            maxTextLength = Math.max(maxTextLength, font.getWidth(entry.getStack().getName().getString()));
+            maxTextLength = Math.max(maxTextLength, font.width(entry.getStack().getHoverName().getString()));
             int multiplier = this.materialList.getMultiplier();
             int count = multiplier == 1 ? entry.getCountMissing() - entry.getCountAvailable() : entry.getCountTotal();
             count *= multiplier;
-            String strCount = GuiBase.TXT_RED + this.getFormattedCountString(count, entry.getStack().getMaxCount()) + GuiBase.TXT_RST;
-            maxCountLength = Math.max(maxCountLength, font.getWidth(strCount));
+            String strCount = GuiBase.TXT_RED + this.getFormattedCountString(count, entry.getStack().getMaxStackSize()) + GuiBase.TXT_RST;
+            maxCountLength = Math.max(maxCountLength, font.width(strCount));
         }
 
         final int maxLineLength = maxTextLength + maxCountLength + 30;
@@ -154,10 +154,10 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         if (scale != 1d)
         {
-            matrixStack.push();
+            matrixStack.pushPose();
             matrixStack.scale((float) scale, (float) scale, (float) scale);
 
-            textStack.push();
+            textStack.pushPose();
             textStack.scale((float) scale, (float) scale, (float) scale);
 
             RenderSystem.applyModelViewMatrix();
@@ -176,13 +176,13 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         for (int i = 0; i < size; ++i)
         {
-            mc.getItemRenderer().renderInGui(list.get(i).getStack(), x, y);
+            mc.getItemRenderer().renderAndDecorateFakeItem(list.get(i).getStack(), x, y);
             y += lineHeight;
         }
 
         if (scale != 1d)
         {
-            matrixStack.pop();
+            matrixStack.popPose();
             RenderSystem.applyModelViewMatrix();
         }
 
@@ -190,7 +190,7 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         if (useShadow)
         {
-            font.drawWithShadow(textStack, title, posX + 2, posY + 2, textColor);
+            font.drawShadow(textStack, title, posX + 2, posY + 2, textColor);
         }
         else
         {
@@ -204,18 +204,18 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
         for (int i = 0; i < size; ++i)
         {
             MaterialListEntry entry = list.get(i);
-            String text = entry.getStack().getName().getString();
+            String text = entry.getStack().getHoverName().getString();
             int multiplier = this.materialList.getMultiplier();
             int count = multiplier == 1 ? entry.getCountMissing() - entry.getCountAvailable() : entry.getCountTotal();
             count *= multiplier;
-            String strCount = this.getFormattedCountString(count, entry.getStack().getMaxCount());
-            int cntLen = font.getWidth(strCount);
+            String strCount = this.getFormattedCountString(count, entry.getStack().getMaxStackSize());
+            int cntLen = font.width(strCount);
             int cntPosX = posX + maxLineLength - cntLen - 2;
 
             if (useShadow)
             {
-                font.drawWithShadow(textStack, text, x, y, textColor);
-                font.drawWithShadow(textStack, strCount, cntPosX, y, itemCountTextColor);
+                font.drawShadow(textStack, text, x, y, textColor);
+                font.drawShadow(textStack, strCount, cntPosX, y, itemCountTextColor);
             }
             else
             {
@@ -228,7 +228,7 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         if (scale != 1d)
         {
-            textStack.pop();
+            textStack.popPose();
         }
 
         return contentHeight + 4;
@@ -261,11 +261,11 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
         }
     }
 
-    public static void renderLookedAtBlockInInventory(HandledScreen<?> gui, MinecraftClient mc)
+    public static void renderLookedAtBlockInInventory(AbstractContainerScreen<?> gui, Minecraft mc)
     {
         if (Configs.Generic.HIGHLIGHT_BLOCK_IN_INV.getBooleanValue())
         {
-            RayTraceUtils.RayTraceWrapper traceWrapper = RayTraceUtils.getGenericTrace(mc.world, mc.player, 10);
+            RayTraceUtils.RayTraceWrapper traceWrapper = RayTraceUtils.getGenericTrace(mc.level, mc.player, 10);
 
             if (traceWrapper != null && traceWrapper.getHitType() == RayTraceUtils.RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
             {
@@ -284,9 +284,9 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
         }
     }
 
-    public static void highlightSlotsWithItem(ItemStack referenceItem, HandledScreen<?> gui, Color4f color, MinecraftClient mc)
+    public static void highlightSlotsWithItem(ItemStack referenceItem, AbstractContainerScreen<?> gui, Color4f color, Minecraft mc)
     {
-        List<Slot> slots = gui.getScreenHandler().slots;
+        List<Slot> slots = gui.getMenu().slots;
 
         RenderSystem.disableTexture();
         RenderUtils.setupBlend();
@@ -295,9 +295,9 @@ public class MaterialListHudRenderer implements IInfoHudRenderer
 
         for (Slot slot : slots)
         {
-            if (slot.hasStack() &&
-                (fi.dy.masa.malilib.util.InventoryUtils.areStacksEqual(slot.getStack(), referenceItem) ||
-                 InventoryUtils.doesShulkerBoxContainItem(slot.getStack(), referenceItem)))
+            if (slot.hasItem() &&
+                (fi.dy.masa.malilib.util.InventoryUtils.areStacksEqual(slot.getItem(), referenceItem) ||
+                 InventoryUtils.doesShulkerBoxContainItem(slot.getItem(), referenceItem)))
             {
                 renderOutlinedBox(guiX + slot.x, guiY + slot.y, 16, 16, color.intValue, color.intValue | 0xFF000000, 1f);
             }

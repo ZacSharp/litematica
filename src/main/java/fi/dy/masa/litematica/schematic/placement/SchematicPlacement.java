@@ -7,6 +7,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import org.apache.commons.lang3.tuple.Pair;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonArray;
@@ -33,11 +38,6 @@ import fi.dy.masa.malilib.util.InfoUtils;
 import fi.dy.masa.malilib.util.IntBoundingBox;
 import fi.dy.masa.malilib.util.JsonUtils;
 import fi.dy.masa.malilib.util.PositionUtils.CoordinateType;
-import net.minecraft.structure.StructurePlacementData;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
 
 public class SchematicPlacement
 {
@@ -50,8 +50,8 @@ public class SchematicPlacement
     private LitematicaSchematic schematic;
     private BlockPos origin;
     private String name;
-    private BlockRotation rotation = BlockRotation.NONE;
-    private BlockMirror mirror = BlockMirror.NONE;
+    private Rotation rotation = Rotation.NONE;
+    private Mirror mirror = Mirror.NONE;
     private BlockInfoListType verifierType = BlockInfoListType.ALL;
     private boolean ignoreEntities;
     private boolean enabled;
@@ -269,12 +269,12 @@ public class SchematicPlacement
         return origin;
     }
 
-    public BlockRotation getRotation()
+    public Rotation getRotation()
     {
         return rotation;
     }
 
-    public BlockMirror getMirror()
+    public Mirror getMirror()
     {
         return mirror;
     }
@@ -324,9 +324,9 @@ public class SchematicPlacement
         return this.verifier;
     }
 
-    public StructurePlacementData getPlacementSettings()
+    public StructurePlaceSettings getPlacementSettings()
     {
-        StructurePlacementData placement = new StructurePlacementData();
+        StructurePlaceSettings placement = new StructurePlaceSettings();
 
         placement.setMirror(this.mirror);
         placement.setRotation(this.rotation);
@@ -449,10 +449,10 @@ public class SchematicPlacement
             if (placement.matchesRequirement(required))
             {
                 BlockPos boxOriginRelative = placement.getPos();
-                BlockPos boxOriginAbsolute = PositionUtils.getTransformedBlockPos(boxOriginRelative, this.mirror, this.rotation).add(this.origin);
+                BlockPos boxOriginAbsolute = PositionUtils.getTransformedBlockPos(boxOriginRelative, this.mirror, this.rotation).offset(this.origin);
                 BlockPos pos2 = PositionUtils.getRelativeEndPositionFromAreaSize(areaSize);
                 pos2 = PositionUtils.getTransformedBlockPos(pos2, this.mirror, this.rotation);
-                pos2 = PositionUtils.getTransformedBlockPos(pos2, placement.getMirror(), placement.getRotation()).add(boxOriginAbsolute);
+                pos2 = PositionUtils.getTransformedBlockPos(pos2, placement.getMirror(), placement.getRotation()).offset(boxOriginAbsolute);
 
                 builder.put(name, new Box(boxOriginAbsolute, pos2, name));
             }
@@ -477,10 +477,10 @@ public class SchematicPlacement
                 if (areaSize != null)
                 {
                     BlockPos boxOriginRelative = placement.getPos();
-                    BlockPos boxOriginAbsolute = PositionUtils.getTransformedBlockPos(boxOriginRelative, this.mirror, this.rotation).add(this.origin);
+                    BlockPos boxOriginAbsolute = PositionUtils.getTransformedBlockPos(boxOriginRelative, this.mirror, this.rotation).offset(this.origin);
                     BlockPos pos2 = PositionUtils.getRelativeEndPositionFromAreaSize(areaSize);
                     pos2 = PositionUtils.getTransformedBlockPos(pos2, this.mirror, this.rotation);
-                    pos2 = PositionUtils.getTransformedBlockPos(pos2, placement.getMirror(), placement.getRotation()).add(boxOriginAbsolute);
+                    pos2 = PositionUtils.getTransformedBlockPos(pos2, placement.getMirror(), placement.getRotation()).offset(boxOriginAbsolute);
 
                     builder.put(regionName, new Box(boxOriginAbsolute, pos2, regionName));
                 }
@@ -598,7 +598,7 @@ public class SchematicPlacement
         }
     }
 
-    public void setSubRegionRotation(String regionName, BlockRotation rotation, IMessageConsumer feedback)
+    public void setSubRegionRotation(String regionName, Rotation rotation, IMessageConsumer feedback)
     {
         if (this.isLocked())
         {
@@ -617,7 +617,7 @@ public class SchematicPlacement
         }
     }
 
-    public void setSubRegionMirror(String regionName, BlockMirror mirror, IMessageConsumer feedback)
+    public void setSubRegionMirror(String regionName, Mirror mirror, IMessageConsumer feedback)
     {
         if (this.isLocked())
         {
@@ -804,7 +804,7 @@ public class SchematicPlacement
         return this;
     }
 
-    public SchematicPlacement setRotation(BlockRotation rotation, IMessageConsumer feedback)
+    public SchematicPlacement setRotation(Rotation rotation, IMessageConsumer feedback)
     {
         if (this.isLocked())
         {
@@ -825,7 +825,7 @@ public class SchematicPlacement
         return this;
     }
 
-    public SchematicPlacement setMirror(BlockMirror mirror, IMessageConsumer feedback)
+    public SchematicPlacement setMirror(Mirror mirror, IMessageConsumer feedback)
     {
         if (this.isLocked())
         {
@@ -964,8 +964,8 @@ public class SchematicPlacement
 
             String name = obj.get("name").getAsString();
             BlockPos pos = new BlockPos(posArr.get(0).getAsInt(), posArr.get(1).getAsInt(), posArr.get(2).getAsInt());
-            BlockRotation rotation = BlockRotation.valueOf(obj.get("rotation").getAsString());
-            BlockMirror mirror = BlockMirror.valueOf(obj.get("mirror").getAsString());
+            Rotation rotation = Rotation.valueOf(obj.get("rotation").getAsString());
+            Mirror mirror = Mirror.valueOf(obj.get("mirror").getAsString());
             boolean enabled = JsonUtils.getBoolean(obj, "enabled");
             boolean enableRender = JsonUtils.getBoolean(obj, "enable_render");
 

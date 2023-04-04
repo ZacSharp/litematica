@@ -1,15 +1,15 @@
 package fi.dy.masa.litematica.mixin;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.RedstoneWireBlock;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
 
-@Mixin(RedstoneWireBlock.class)
+@Mixin(RedStoneWireBlock.class)
 public interface IMixinRedstoneWireBlock
 {
     @Invoker("getPlacementState")
-    BlockState litematicaGetPlacementState(BlockView world, BlockState state, BlockPos pos);
+    BlockState litematicaGetPlacementState(BlockGetter world, BlockState state, BlockPos pos);
 }

@@ -86,8 +86,8 @@ public class GuiMaterialList extends GuiListBase<MaterialListEntry, WidgetMateri
         int w = this.getStringWidth(str);
         this.addLabel(this.width - w - 56, y + 5, w, 12, 0xFFFFFFFF, str);
 
-        GuiTextFieldInteger tf = new GuiTextFieldInteger(this.width - 52, y + 2, 40, 16, this.textRenderer);
-        tf.setText(String.valueOf(this.materialList.getMultiplier()));
+        GuiTextFieldInteger tf = new GuiTextFieldInteger(this.width - 52, y + 2, 40, 16, this.font);
+        tf.setValue(String.valueOf(this.materialList.getMultiplier()));
         MultiplierListener listener = new MultiplierListener(this.materialList, this);
         this.addTextField(tf, listener);
 
@@ -320,7 +320,7 @@ public class GuiMaterialList extends GuiListBase<MaterialListEntry, WidgetMateri
                 int total = entry.getCountTotal() * multiplier;
                 int missing = multiplier > 1 ? total : entry.getCountMissing();
                 int available = entry.getCountAvailable();
-                dump.addData(entry.getStack().getName().getString(), String.valueOf(total), String.valueOf(missing), String.valueOf(available));
+                dump.addData(entry.getStack().getHoverName().getString(), String.valueOf(total), String.valueOf(missing), String.valueOf(available));
             }
 
             String titleTotal = multiplier > 1 ? String.format("Total (x%d)", multiplier) : "Total";
@@ -380,7 +380,7 @@ public class GuiMaterialList extends GuiListBase<MaterialListEntry, WidgetMateri
         {
             try
             {
-                int multiplier = Integer.parseInt(textField.getText());
+                int multiplier = Integer.parseInt(textField.getValue());
 
                 if (multiplier != this.materialList.getMultiplier())
                 {

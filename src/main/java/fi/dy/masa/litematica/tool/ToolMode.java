@@ -1,8 +1,8 @@
 package fi.dy.masa.litematica.tool;
 
 import javax.annotation.Nullable;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.state.BlockState;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.malilib.util.StringUtils;
@@ -94,7 +94,7 @@ public enum ToolMode
         return StringUtils.translate(this.unlocName);
     }
 
-    public ToolMode cycle(PlayerEntity player, boolean forward)
+    public ToolMode cycle(Player player, boolean forward)
     {
         ToolMode[] values = ToolMode.values();
         final boolean isCreative = EntityUtils.isCreativeMode(player);

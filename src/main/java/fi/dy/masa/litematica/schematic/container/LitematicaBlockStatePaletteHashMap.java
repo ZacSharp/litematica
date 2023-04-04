@@ -2,15 +2,15 @@ package fi.dy.masa.litematica.schematic.container;
 
 import java.util.List;
 import javax.annotation.Nullable;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.util.collection.Int2ObjectBiMap;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.util.CrudeIncrementalIntIdentityHashBiMap;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockStatePalette
 {
-    private final Int2ObjectBiMap<BlockState> statePaletteMap;
+    private final CrudeIncrementalIntIdentityHashBiMap<BlockState> statePaletteMap;
     private final ILitematicaBlockStatePaletteResizer paletteResizer;
     private final int bits;
 
@@ -18,13 +18,13 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
     {
         this.bits = bitsIn;
         this.paletteResizer = paletteResizer;
-        this.statePaletteMap = new Int2ObjectBiMap<>(1 << bitsIn);
+        this.statePaletteMap = new CrudeIncrementalIntIdentityHashBiMap<>(1 << bitsIn);
     }
 
     @Override
     public int idFor(BlockState state)
     {
-        int i = this.statePaletteMap.getRawId(state);
+        int i = this.statePaletteMap.getId(state);
 
         if (i == -1)
         {
@@ -43,7 +43,7 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
     @Nullable
     public BlockState getBlockState(int indexKey)
     {
-        return this.statePaletteMap.get(indexKey);
+        return this.statePaletteMap.byId(indexKey);
     }
 
     @Override
@@ -68,14 +68,14 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
     }
 
     @Override
-    public void readFromNBT(NbtList tagList)
+    public void readFromNBT(ListTag tagList)
     {
         final int size = tagList.size();
 
         for (int i = 0; i < size; ++i)
         {
-            NbtCompound tag = tagList.getCompound(i);
-            BlockState state = NbtHelper.toBlockState(tag);
+            CompoundTag tag = tagList.getCompound(i);
+            BlockState state = NbtUtils.readBlockState(tag);
 
             if (i > 0 || state != LitematicaBlockStateContainer.AIR_BLOCK_STATE)
             {
@@ -85,20 +85,20 @@ public class LitematicaBlockStatePaletteHashMap implements ILitematicaBlockState
     }
 
     @Override
-    public NbtList writeToNBT()
+    public ListTag writeToNBT()
     {
-        NbtList tagList = new NbtList();
+        ListTag tagList = new ListTag();
 
         for (int id = 0; id < this.statePaletteMap.size(); ++id)
         {
-            BlockState state = this.statePaletteMap.get(id);
+            BlockState state = this.statePaletteMap.byId(id);
 
             if (state == null)
             {
                 state = LitematicaBlockStateContainer.AIR_BLOCK_STATE;
             }
 
-            NbtCompound tag = NbtHelper.fromBlockState(state);
+            CompoundTag tag = NbtUtils.writeBlockState(state);
             tagList.add(tag);
         }
 

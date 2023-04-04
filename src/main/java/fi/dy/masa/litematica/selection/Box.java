@@ -1,26 +1,26 @@
 package fi.dy.masa.litematica.selection;
 
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import fi.dy.masa.litematica.util.PositionUtils;
 import fi.dy.masa.litematica.util.PositionUtils.Corner;
 import fi.dy.masa.malilib.util.JsonUtils;
 import fi.dy.masa.malilib.util.PositionUtils.CoordinateType;
-import net.minecraft.util.math.BlockPos;
 
 public class Box
 {
     @Nullable private BlockPos pos1;
     @Nullable private BlockPos pos2;
-    private BlockPos size = BlockPos.ORIGIN;
+    private BlockPos size = BlockPos.ZERO;
     private String name = "Unnamed";
     private Corner selectedCorner = Corner.NONE;
 
     public Box()
     {
-        this.pos1 = BlockPos.ORIGIN;
-        this.pos2 = BlockPos.ORIGIN;
+        this.pos1 = BlockPos.ZERO;
+        this.pos2 = BlockPos.ZERO;
         this.updateSize();
     }
 
@@ -111,7 +111,7 @@ public class Box
         }
         else if (this.pos1 == null && this.pos2 == null)
         {
-            this.size = BlockPos.ORIGIN;
+            this.size = BlockPos.ZERO;
         }
         else
         {
