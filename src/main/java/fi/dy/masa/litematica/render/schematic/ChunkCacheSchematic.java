@@ -74,7 +74,7 @@ public class ChunkCacheSchematic implements BlockAndTintGetter, LightChunkGetter
     }
 
     @Override
-    @org.jetbrains.annotations.Nullable
+    @Nullable
     public BlockGetter getChunkForLighting(int chunkX, int chunkZ)
     {
         return null; // TODO 1.17 this shouldn't be needed since the lighting provider does nothing

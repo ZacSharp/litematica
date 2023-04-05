@@ -431,7 +431,7 @@ public class WorldSchematic extends Level
     }
 
     @Override
-    public void gameEvent(@org.jetbrains.annotations.Nullable Entity entity, GameEvent event, BlockPos pos)
+    public void gameEvent(@Nullable Entity entity, GameEvent event, BlockPos pos)
     {
         // NO-OP
     }
