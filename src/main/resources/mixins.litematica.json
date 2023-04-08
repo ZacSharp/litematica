@@ -3,6 +3,7 @@
 	"package": "fi.dy.masa.litematica.mixin",
 	"compatibilityLevel": "JAVA_16",
 	"minVersion": "0.8",
+	"refmap": "mixins.litematica.refmap.json",
 	"client": [
 		"IMixinChunkDeltaUpdateS2CPacket",
 		"IMixinFenceGateBlock",
