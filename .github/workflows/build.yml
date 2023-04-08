@@ -24,7 +24,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: ZacSharp/malilib-forge
-        ref: ddd3ea8c621010b81346be8aea06e7e5d63c559e
+        ref: 6c64ba26be9d62378e4326acc84b06a68cae2f3f
         path: malilib
 
     - name: Checkout Litematica
