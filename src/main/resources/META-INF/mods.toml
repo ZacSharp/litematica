@@ -11,7 +11,7 @@ modLoader="javafml" #mandatory
 loaderVersion="[32,)" #mandatory (26 is current forge version)
 
 # A URL to refer people to when problems occur with this mod
-issueTrackerURL="https://github.com/maruohon/litematica/issues" #optional
+issueTrackerURL="https://github.com/ZacSharp/litematica-forge/issues" #optional
 
 license="GNU Lesser General Public License v3.0"
 
@@ -31,7 +31,7 @@ license="GNU Lesser General Public License v3.0"
     #updateJSONURL="http://myurl.me/" #optional
 
     # A URL for the "homepage" for this mod, displayed in the mod UI
-    displayURL="https://www.curseforge.com/minecraft/mc-mods/litematica" #optional
+    displayURL="https://github.com/ZacSharp/litematica-forge" #optional
 
     # A file name (in the root of the mod JAR) containing a logo for display
     #logoFile="examplemod.png" #optional
@@ -43,7 +43,10 @@ license="GNU Lesser General Public License v3.0"
     authors="masa" #optional
 
     # The description text for the mod (multi line!) (#mandatory)
-    description='''Litematica is a client-side schematic mod for Minecraft, with also lots of extra functionality especially for creative mode (such as schematic pasting, area cloning, moving, filling, deletion)'''
+    description='''Litematica is a client-side schematic mod for Minecraft, with also lots of extra functionality especially for creative mode (such as schematic pasting, area cloning, moving, filling, deletion)
+Note that this is not an official version of Litematica so please DO NOT report problems to masa.
+Instead, report them at https://github.com/ZacSharp/litematica-forge/issues.
+'''
 
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.litematica]] #optional
